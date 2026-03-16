@@ -46,6 +46,10 @@ export function ForgotPasswordForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <div className="flex flex-col space-y-2 text-center mb-4">
+        <h1 className="text-2xl font-semibold tracking-tight">NexusPod</h1>
+        <p className="text-sm text-muted-foreground">Reset your password</p>
+      </div>
       {success ? (
         <Card>
           <CardHeader>

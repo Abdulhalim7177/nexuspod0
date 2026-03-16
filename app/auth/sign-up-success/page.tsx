@@ -5,12 +5,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Link from "next/link";
 
 export default function Page() {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-6">
+          <div className="flex flex-col space-y-2 text-center mb-4">
+            <h1 className="text-2xl font-semibold tracking-tight">NexusPod</h1>
+            <p className="text-sm text-muted-foreground">Almost there!</p>
+          </div>
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">
@@ -19,10 +24,13 @@ export default function Page() {
               <CardDescription>Check your email to confirm</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-4">
                 You&apos;ve successfully signed up. Please check your email to
                 confirm your account before signing in.
               </p>
+              <Link href="/auth/login" className="text-sm underline">
+                Go to Login
+              </Link>
             </CardContent>
           </Card>
         </div>
