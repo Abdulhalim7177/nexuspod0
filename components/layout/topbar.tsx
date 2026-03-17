@@ -1,10 +1,8 @@
 "use client";
 
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { usePathname } from "next/navigation";
-import { Bell, Search } from "lucide-react";
+import { Bell, PanelLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const routeTitles: Record<string, string> = {
@@ -32,15 +30,25 @@ function getPageTitle(pathname: string): string {
     return "Workspace";
 }
 
-export function Topbar() {
+export function Topbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
     const pathname = usePathname();
     const title = getPageTitle(pathname);
 
     return (
-        <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+        <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6">
             <div className="flex items-center gap-3">
-                <SidebarTrigger className="-ml-2 hover:bg-accent/50 transition-colors" />
-                <Separator orientation="vertical" className="h-5 bg-border/60" />
+                {onOpenSidebar && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="md:hidden"
+                        onClick={onOpenSidebar}
+                    >
+                        <PanelLeft className="h-5 w-5" />
+                        <span className="sr-only">Open sidebar</span>
+                    </Button>
+                )}
                 <h1 className="text-sm font-semibold tracking-tight">{title}</h1>
             </div>
 

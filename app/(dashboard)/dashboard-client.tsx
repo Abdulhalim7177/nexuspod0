@@ -51,11 +51,3 @@ export function DashboardClient({ children }: { children: React.ReactNode }) {
         </div>
     );
 }
-
-export default function DashboardLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    return <DashboardClient>{children}</DashboardClient>;
-}
