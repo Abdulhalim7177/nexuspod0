@@ -1,0 +1,70 @@
+"use client";
+
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { ThemeSwitcher } from "@/components/theme-switcher";
+import { usePathname } from "next/navigation";
+import { Bell, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const routeTitles: Record<string, string> = {
+    "/dashboard": "Dashboard",
+    "/tasks": "My Tasks",
+    "/pods": "My Pods",
+    "/projects": "Projects",
+    "/messages": "Messages",
+    "/notifications": "Notifications",
+    "/opportunities": "Opportunities",
+    "/leaderboard": "Leaderboard",
+    "/profile": "Profile Settings",
+    "/settings": "Settings",
+};
+
+function getPageTitle(pathname: string): string {
+    // Exact match first
+    if (routeTitles[pathname]) return routeTitles[pathname];
+
+    // Check parent routes
+    for (const [route, title] of Object.entries(routeTitles)) {
+        if (pathname.startsWith(route + "/")) return title;
+    }
+
+    return "Workspace";
+}
+
+export function Topbar() {
+    const pathname = usePathname();
+    const title = getPageTitle(pathname);
+
+    return (
+        <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+            <div className="flex items-center gap-3">
+                <SidebarTrigger className="-ml-2 hover:bg-accent/50 transition-colors" />
+                <Separator orientation="vertical" className="h-5 bg-border/60" />
+                <h1 className="text-sm font-semibold tracking-tight">{title}</h1>
+            </div>
+
+            <div className="flex flex-1 items-center justify-end gap-3">
+                {/* Global Search Placeholder (Interactive look) */}
+                <div className="hidden md:flex relative max-w-sm mr-2 group">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <div className="h-9 w-64 rounded-md border border-input/50 bg-muted/20 px-3 py-1 text-sm shadow-sm transition-colors flex items-center pl-9 text-muted-foreground cursor-pointer hover:border-border hover:bg-accent/50">
+                        Search...
+                        <kbd className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
+                            <span className="text-xs">⌘</span>K
+                        </kbd>
+                    </div>
+                </div>
+
+                <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full text-muted-foreground hover:text-foreground">
+                    <Bell className="h-4 w-4" />
+                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary border-2 border-background" />
+                </Button>
+
+                <div className="h-5 w-px bg-border/60 mx-1" />
+
+                <ThemeSwitcher />
+            </div>
+        </header>
+    );
+}

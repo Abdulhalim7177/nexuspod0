@@ -10,7 +10,7 @@ const defaultUrl = process.env.VERCEL_URL
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: "NexusPod",
-  description: "Your personal podcast management platform",
+  description: "Workspace & ecosystem platform for African founders — build together, ship faster.",
 };
 
 const inter = Inter({
