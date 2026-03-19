@@ -28,7 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { navigationConfig, type NavItem } from "@/lib/navigation";
+import { navigationConfig, noPodNavigationConfig, type NavItem } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -61,6 +61,7 @@ export function AppSidebar({
     const [user, setUser] = useState<UserProfile | null>(null);
     const [pods, setPods] = useState<{id: string; title: string; npn: string}[]>([]);
     const [selectedPod, setSelectedPod] = useState<{id: string; title: string; npn: string} | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const supabase = createClient();
@@ -93,6 +94,7 @@ export function AppSidebar({
                     }
                 }
             }
+            setLoading(false);
         };
         fetchUser();
     }, []);
@@ -111,6 +113,30 @@ export function AppSidebar({
         .toUpperCase()
         .slice(0, 2);
 
+    if (loading) {
+        return (
+            <aside
+                className={cn(
+                    "flex h-svh flex-col border-r border-border/40 bg-background/95 backdrop-blur-sm transition-all duration-200",
+                    fixed ? "fixed left-0 top-0 z-50 hidden md:block" : "relative z-50",
+                    collapsed ? "w-16" : "w-64",
+                    className
+                )}
+            >
+                <div className="flex h-14 shrink-0 items-center border-b border-border/30 px-2">
+                    <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
+                </div>
+                <div className="flex-1 p-2 space-y-2">
+                    <div className="h-8 bg-muted rounded animate-pulse" />
+                    <div className="h-8 bg-muted rounded animate-pulse" />
+                    <div className="h-8 bg-muted rounded animate-pulse" />
+                </div>
+            </aside>
+        )
+    }
+
+    const hasPods = pods.length > 0
+
     return (
         <aside
             className={cn(
@@ -123,7 +149,7 @@ export function AppSidebar({
             {/* Header */}
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/30 px-2">
                 {!collapsed && (
-                    <Link href="/dashboard" className="flex items-center gap-2 ml-1">
+                    <Link href="/pods" className="flex items-center gap-2 ml-1">
                         <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-500 text-white shadow-lg shadow-purple-500/25">
                             <Sparkles className="size-4" />
                         </div>
@@ -136,7 +162,7 @@ export function AppSidebar({
                     </Link>
                 )}
                 {collapsed && (
-                    <Link href="/dashboard" className="mx-auto">
+                    <Link href="/pods" className="mx-auto">
                         <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-500 text-white shadow-lg shadow-purple-500/25">
                             <Sparkles className="size-4" />
                         </div>
@@ -159,7 +185,7 @@ export function AppSidebar({
             )}
 
             {/* Pod Selector - Hidden when collapsed */}
-            {!collapsed && pods.length > 0 && (
+            {!collapsed && hasPods && (
                 <div className="shrink-0 px-2 pb-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -180,7 +206,7 @@ export function AppSidebar({
                             {pods.map((pod) => (
                                 <DropdownMenuItem 
                                     key={pod.id}
-                                    onClick={() => setSelectedPod(pod)}
+                                    onClick={() => router.push(`/pods/${pod.id}`)}
                                     className="flex items-center gap-2 cursor-pointer"
                                 >
                                     <Boxes className="size-4 text-purple-500" />
@@ -204,7 +230,7 @@ export function AppSidebar({
 
             {/* Navigation */}
             <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-                {navigationConfig.map((group) => (
+                {(!hasPods ? noPodNavigationConfig : navigationConfig).map((group) => (
                     <div key={group.label} className="pb-3">
                         <div className="text-xs font-semibold text-muted-foreground/60 tracking-wider uppercase px-3 mb-1">
                             {!collapsed && group.label}

@@ -32,6 +32,16 @@ export interface NavGroup {
     items: NavItem[];
 }
 
+export const noPodNavigationConfig: NavGroup[] = [
+    {
+        label: "Account",
+        items: [
+            { title: "Profile", href: "/profile", icon: UserCircle },
+            { title: "Settings", href: "/settings", icon: Settings },
+        ],
+    },
+];
+
 export const navigationConfig: NavGroup[] = [
     {
         label: "Overview",
