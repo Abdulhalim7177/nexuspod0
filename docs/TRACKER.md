@@ -36,15 +36,15 @@
 
 | # | Increment | Status | Notes |
 |---|-----------|--------|-------|
-| 2.1 | Create `pods` table + NPN trigger | ⬜ | Migration `002_pods.sql` |
-| 2.2 | Create `pod_members` table + RLS | ⬜ | Migration `003_pod_members.sql` |
-| 2.3 | Create `pod_invitations` table | ⬜ | Migration `004_pod_invitations.sql` |
-| 2.4 | Create Pod page (form) | ⬜ | `/pods/new` |
-| 2.5 | Pod list page | ⬜ | `/pods` |
-| 2.6 | Pod overview page | ⬜ | `/pods/[podId]` |
-| 2.7 | Invitation system (generate + join) | ⬜ | Link-based joining |
-| 2.8 | Role management UI | ⬜ | Founder-only controls |
-| 2.9 | Pod settings page | ⬜ | Edit + member management |
+| 2.1 | Create `pods` table + NPN trigger | ✅ | Migration `002_create_pods.sql` |
+| 2.2 | Create `pod_members` table + RLS | ✅ | Migration `003_create_pod_members.sql` |
+| 2.3 | Create `pod_invitations` table | ✅ | Migration `004_create_pod_invitations.sql` |
+| 2.4 | Create Pod page (form) | ✅ | `/pods/new` |
+| 2.5 | Pod list page | ✅ | `/pods` |
+| 2.6 | Pod overview page | ✅ | `/pods/[podId]` |
+| 2.7 | Invitation system (generate + join) | ✅ | Implemented in `lib/pods/actions.ts` |
+| 2.8 | Role management UI | ✅ | Actions in `lib/pods/actions.ts` |
+| 2.9 | Pod settings page | ✅ | `/pods/[podId]/settings` |
 
 ---
 

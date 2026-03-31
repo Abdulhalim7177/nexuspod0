@@ -28,10 +28,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { navigationConfig, noPodNavigationConfig, type NavItem } from "@/lib/navigation";
+import { navigationConfig, noPodNavigationConfig, podNavigationConfig, type NavItem, type NavGroup } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { CreateProjectForm } from "@/components/projects/create-project-form";
 
 interface UserProfile {
     email: string;
@@ -62,6 +69,11 @@ export function AppSidebar({
     const [pods, setPods] = useState<{id: string; title: string; npn: string}[]>([]);
     const [selectedPod, setSelectedPod] = useState<{id: string; title: string; npn: string} | null>(null);
     const [loading, setLoading] = useState(true);
+    const [createProjectOpen, setCreateProjectOpen] = useState(false);
+
+    // Extract podId from URL if present
+    const podIdMatch = pathname.match(/\/pods\/([^\/]+)/);
+    const currentPodId = podIdMatch ? podIdMatch[1] : null;
 
     useEffect(() => {
         const supabase = createClient();
@@ -72,13 +84,12 @@ export function AppSidebar({
                     .from("profiles")
                     .select("full_name, avatar_url")
                     .eq("id", authUser.id)
-                    .single();
+                    .maybeSingle();
 
                 const { data: podMemberships } = await supabase
                     .from("pod_members")
                     .select("pod_id, pods!inner(id, title, npn)")
-                    .eq("user_id", authUser.id)
-                    .limit(5);
+                    .eq("user_id", authUser.id);
 
                 setUser({
                     email: authUser.email || "",
@@ -89,7 +100,12 @@ export function AppSidebar({
                 if (podMemberships && podMemberships.length > 0) {
                     const podsData = podMemberships.map((m: any) => m.pods).filter(Boolean);
                     setPods(podsData);
-                    if (podsData.length > 0) {
+                    
+                    // Set selected pod based on current URL or first available
+                    if (currentPodId) {
+                        const current = podsData.find(p => p.id === currentPodId);
+                        if (current) setSelectedPod(current);
+                    } else if (podsData.length > 0) {
                         setSelectedPod(podsData[0]);
                     }
                 }
@@ -97,7 +113,7 @@ export function AppSidebar({
             setLoading(false);
         };
         fetchUser();
-    }, []);
+    }, [currentPodId]);
 
     const handleLogout = async () => {
         const supabase = createClient();
@@ -136,6 +152,21 @@ export function AppSidebar({
     }
 
     const hasPods = pods.length > 0
+    
+    // Determine which config to use
+    let activeConfig: NavGroup[] = noPodNavigationConfig;
+    if (currentPodId) {
+        // Replace [podId] placeholder in podNavigationConfig
+        activeConfig = podNavigationConfig.map(group => ({
+            ...group,
+            items: group.items.map(item => ({
+                ...item,
+                href: item.href.replace('[podId]', currentPodId)
+            }))
+        }));
+    } else if (hasPods) {
+        activeConfig = navigationConfig;
+    }
 
     return (
         <aside
@@ -206,7 +237,10 @@ export function AppSidebar({
                             {pods.map((pod) => (
                                 <DropdownMenuItem 
                                     key={pod.id}
-                                    onClick={() => router.push(`/pods/${pod.id}`)}
+                                    onClick={() => {
+                                        setSelectedPod(pod);
+                                        router.push(`/pods/${pod.id}`);
+                                    }}
                                     className="flex items-center gap-2 cursor-pointer"
                                 >
                                     <Boxes className="size-4 text-purple-500" />
@@ -230,7 +264,7 @@ export function AppSidebar({
 
             {/* Navigation */}
             <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-                {(!hasPods ? noPodNavigationConfig : navigationConfig).map((group) => (
+                {activeConfig.map((group) => (
                     <div key={group.label} className="pb-3">
                         <div className="text-xs font-semibold text-muted-foreground/60 tracking-wider uppercase px-3 mb-1">
                             {!collapsed && group.label}
@@ -243,12 +277,30 @@ export function AppSidebar({
                                     pathname={pathname} 
                                     collapsed={collapsed} 
                                     onNavigate={onNavigate}
+                                    onAction={(action) => {
+                                        if (action === "create-project") setCreateProjectOpen(true);
+                                    }}
                                 />
                             ))}
                         </div>
                     </div>
                 ))}
             </div>
+
+            {/* Create Project Modal */}
+            <Dialog open={createProjectOpen} onOpenChange={setCreateProjectOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Create New Project</DialogTitle>
+                    </DialogHeader>
+                    {currentPodId && (
+                        <CreateProjectForm 
+                            podId={currentPodId} 
+                            onSuccess={() => setCreateProjectOpen(false)} 
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
 
             {/* Footer - User */}
             <div className="mt-auto shrink-0 border-t border-border/30 p-2">
@@ -335,18 +387,31 @@ function NavLink({
     pathname,
     collapsed,
     onNavigate,
+    onAction,
 }: {
     item: NavItem;
     pathname: string;
     collapsed: boolean;
     onNavigate?: () => void;
+    onAction?: (action: string) => void;
 }) {
     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+    const isCreateAction = item.title === "Create Project";
+
+    const handleClick = (e: React.MouseEvent) => {
+        if (isCreateAction && onAction) {
+            e.preventDefault();
+            onAction("create-project");
+            if (onNavigate) onNavigate();
+        } else if (onNavigate) {
+            onNavigate();
+        }
+    };
     
     return (
         <Link
-            href={item.href}
-            onClick={onNavigate}
+            href={isCreateAction ? "#" : item.href}
+            onClick={handleClick}
             className={`flex items-center gap-3 rounded-lg h-11 font-medium transition-all duration-200 ${
                 collapsed ? 'justify-center px-0' : 'px-3'
             } ${

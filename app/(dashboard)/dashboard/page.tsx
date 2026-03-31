@@ -21,7 +21,7 @@ export default async function DashboardPage() {
         .select("pod_id")
         .eq("user_id", user.id)
         .limit(1)
-        .single()
+        .maybeSingle()
 
     if (!podMembership) {
         return (

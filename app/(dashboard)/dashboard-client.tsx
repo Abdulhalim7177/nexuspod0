@@ -5,26 +5,42 @@ import { Topbar } from "@/components/layout/topbar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
+function SidebarSkeleton() {
+    return (
+        <div className="w-64 h-screen bg-background border-r animate-pulse" />
+    );
+}
+
+function TopbarSkeleton() {
+    return (
+        <div className="h-16 border-b bg-background animate-pulse" />
+    );
+}
+
 export function DashboardClient({ children }: { children: React.ReactNode }) {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     
     return (
         <div className="min-h-svh w-full">
-            <AppSidebar 
-                collapsed={sidebarCollapsed} 
-                onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
-            />
+            <Suspense fallback={<SidebarSkeleton />}>
+                <AppSidebar 
+                    collapsed={sidebarCollapsed} 
+                    onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+                />
+            </Suspense>
             <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
                 <SheetContent side="left" className="p-0 md:hidden">
-                    <AppSidebar
-                        collapsed={false}
-                        onToggle={() => {}}
-                        fixed={false}
-                        hideToggle
-                        className="w-full border-r-0"
-                        onNavigate={() => setMobileSidebarOpen(false)}
-                    />
+                    <Suspense fallback={<div className="w-full border-r" />}>
+                        <AppSidebar
+                            collapsed={false}
+                            onToggle={() => {}}
+                            fixed={false}
+                            hideToggle
+                            className="w-full border-r-0"
+                            onNavigate={() => setMobileSidebarOpen(false)}
+                        />
+                    </Suspense>
                 </SheetContent>
             </Sheet>
             <div
@@ -33,7 +49,9 @@ export function DashboardClient({ children }: { children: React.ReactNode }) {
                 }`}
             >
                 <div className="flex min-h-svh flex-col">
-                    <Topbar onOpenSidebar={() => setMobileSidebarOpen(true)} />
+                    <Suspense fallback={<TopbarSkeleton />}>
+                        <Topbar onOpenSidebar={() => setMobileSidebarOpen(true)} />
+                    </Suspense>
                     <main className="flex-1 min-w-0 p-4 md:p-6 lg:p-8">
                         <Suspense
                             fallback={
