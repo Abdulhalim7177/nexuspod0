@@ -2,8 +2,10 @@ import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Plus, Boxes, Users, Calendar } from "lucide-react"
+import { Suspense } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 
-export default async function PodsPage() {
+async function PodsContent() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -12,6 +14,19 @@ export default async function PodsPage() {
     redirect("/auth/login")
   }
 
+  // First, get the pod IDs the user belongs to
+  const { data: userPodMemberships } = await supabase
+    .from("pod_members")
+    .select("pod_id")
+    .eq("user_id", user.id)
+
+  const podIds = userPodMemberships?.map(m => m.pod_id) || []
+
+  if (podIds.length === 0) {
+    redirect("/dashboard")
+  }
+
+  // Then fetch those pods with ALL their members (for accurate member count)
   const { data: pods } = await supabase
     .from("pods")
     .select(`
@@ -22,7 +37,7 @@ export default async function PodsPage() {
         user_id
       )
     `)
-    .eq("pod_members.user_id", user.id)
+    .in("id", podIds)
     .order("created_at", { ascending: false })
 
   if (!pods || pods.length === 0) {
@@ -156,5 +171,28 @@ export default async function PodsPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function PodsPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
+        </div>
+      </div>
+    }>
+      <PodsContent />
+    </Suspense>
   )
 }

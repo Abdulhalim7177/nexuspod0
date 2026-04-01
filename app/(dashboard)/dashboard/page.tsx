@@ -2,12 +2,14 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Boxes, Plus, ArrowRight, KeyRound } from "lucide-react"
+import { Suspense } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export const metadata = {
     title: "Dashboard | Nexus Pod",
 }
 
-export default async function DashboardPage() {
+async function DashboardContent() {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -85,4 +87,25 @@ export default async function DashboardPage() {
     }
 
     redirect(`/pods/${podMembership.pod_id}`)
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-[80vh] flex flex-col items-center justify-center space-y-8 animate-pulse">
+                <Skeleton className="w-20 h-20 rounded-2xl" />
+                <div className="space-y-2 flex flex-col items-center">
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-4 w-48" />
+                </div>
+                <div className="w-full max-w-md space-y-4">
+                    <Skeleton className="h-16 w-full rounded-xl" />
+                    <Skeleton className="h-4 w-8 mx-auto" />
+                    <Skeleton className="h-32 w-full rounded-xl" />
+                </div>
+            </div>
+        }>
+            <DashboardContent />
+        </Suspense>
+    )
 }

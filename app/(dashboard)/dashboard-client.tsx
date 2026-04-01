@@ -3,11 +3,10 @@
 import { Suspense, useState } from "react";
 import { Topbar } from "@/components/layout/topbar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 function SidebarSkeleton() {
     return (
-        <div className="w-64 h-screen bg-background border-r animate-pulse" />
+        <div className="w-56 h-screen bg-background border-r animate-pulse" />
     );
 }
 
@@ -22,33 +21,21 @@ export function DashboardClient({ children }: { children: React.ReactNode }) {
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     
     return (
-        <div className="min-h-svh w-full">
+        <div className="h-svh w-full flex">
             <Suspense fallback={<SidebarSkeleton />}>
                 <AppSidebar 
                     collapsed={sidebarCollapsed} 
-                    onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+                    onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    mobileOpen={mobileSidebarOpen}
+                    onMobileOpenChange={setMobileSidebarOpen}
                 />
             </Suspense>
-            <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-                <SheetContent side="left" className="p-0 md:hidden">
-                    <Suspense fallback={<div className="w-full border-r" />}>
-                        <AppSidebar
-                            collapsed={false}
-                            onToggle={() => {}}
-                            fixed={false}
-                            hideToggle
-                            className="w-full border-r-0"
-                            onNavigate={() => setMobileSidebarOpen(false)}
-                        />
-                    </Suspense>
-                </SheetContent>
-            </Sheet>
             <div
-                className={`min-h-svh w-full pl-0 transition-[padding] duration-200 ${
-                    sidebarCollapsed ? "md:pl-16" : "md:pl-64"
+                className={`h-svh w-full overflow-y-auto pl-0 transition-[padding] duration-200 ${
+                    sidebarCollapsed ? "md:pl-16" : "md:pl-56"
                 }`}
             >
-                <div className="flex min-h-svh flex-col">
+                <div className="flex min-h-full flex-col">
                     <Suspense fallback={<TopbarSkeleton />}>
                         <Topbar onOpenSidebar={() => setMobileSidebarOpen(true)} />
                     </Suspense>

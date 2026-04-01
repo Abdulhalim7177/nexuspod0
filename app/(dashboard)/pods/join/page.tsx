@@ -3,12 +3,14 @@ import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
 import { Boxes, ArrowRight, CheckCircle, AlertCircle, FolderKanban } from "lucide-react"
 import { revalidatePath } from "next/cache"
+import { Suspense } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface JoinPageProps {
   searchParams: Promise<{ code?: string }>
 }
 
-export default async function JoinPodPage({ searchParams }: JoinPageProps) {
+async function JoinPodContent({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
   const { code } = await searchParams
   const supabase = await createClient()
 
@@ -175,7 +177,7 @@ export default async function JoinPodPage({ searchParams }: JoinPageProps) {
     )
   }
 
-  async function joinAction() {
+  const joinAction = async () => {
     "use server"
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -229,7 +231,7 @@ export default async function JoinPodPage({ searchParams }: JoinPageProps) {
 
       await supabase
         .from("pod_invitations")
-        .update({ used_count: invitation.used_count + 1 })
+        .update({ used_count: (invitation.used_count || 0) + 1 })
         .eq("id", invitation.id)
 
       revalidatePath("/pods")
@@ -283,5 +285,27 @@ export default async function JoinPodPage({ searchParams }: JoinPageProps) {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function JoinPodPage({ searchParams }: JoinPageProps) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="rounded-lg border bg-card p-6 text-center space-y-4">
+            <Skeleton className="h-16 w-16 rounded-lg mx-auto" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48 mx-auto" />
+              <Skeleton className="h-4 w-32 mx-auto" />
+            </div>
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
+      </div>
+    }>
+      <JoinPodContent searchParams={searchParams} />
+    </Suspense>
   )
 }

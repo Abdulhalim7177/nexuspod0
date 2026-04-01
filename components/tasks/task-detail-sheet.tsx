@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   Sheet, 
   SheetContent, 
@@ -62,10 +62,14 @@ export function TaskDetailSheet({
   const [submissionNote, setSubmissionReviewNote] = useState("")
   const [view, setView] = useState<'DETAILS' | 'SUBMIT' | 'REVIEW'>('DETAILS')
   const [newSubTask, setNewSubTask] = useState("")
+  const [subTasks, setSubTasks] = useState<SubTask[]>((task.sub_tasks as SubTask[]) || [])
+
+  useEffect(() => {
+    setSubTasks((task.sub_tasks as SubTask[]) || [])
+  }, [task.id, task.sub_tasks])
 
   const isAssignee = task.assignees?.some((a: any) => a.user.id === currentUserId)
   const latestSubmission = task.submissions?.[0]
-  const subTasks = (task.sub_tasks as SubTask[]) || []
   const attachments = (task.attachments as string[]) || []
 
   const handleSubmit = async () => {
@@ -88,23 +92,24 @@ export function TaskDetailSheet({
 
   const handleAddSubTask = async () => {
     if (!newSubTask.trim()) return
-    const updatedSubTasks = [
-      ...subTasks,
-      { id: crypto.randomUUID(), title: newSubTask, completed: false }
-    ]
-    await updateTaskDetails(task.id, { sub_tasks: updatedSubTasks }, podId, projectId)
+    const newTask = { id: crypto.randomUUID(), title: newSubTask, completed: false }
+    const updatedSubTasks = [...subTasks, newTask]
+    setSubTasks(updatedSubTasks)
     setNewSubTask("")
+    await updateTaskDetails(task.id, { sub_tasks: updatedSubTasks }, podId, projectId)
   }
 
   const toggleSubTask = async (id: string) => {
     const updatedSubTasks = subTasks.map(st => 
       st.id === id ? { ...st, completed: !st.completed } : st
     )
+    setSubTasks(updatedSubTasks)
     await updateTaskDetails(task.id, { sub_tasks: updatedSubTasks }, podId, projectId)
   }
 
   const removeSubTask = async (id: string) => {
     const updatedSubTasks = subTasks.filter(st => st.id !== id)
+    setSubTasks(updatedSubTasks)
     await updateTaskDetails(task.id, { sub_tasks: updatedSubTasks }, podId, projectId)
   }
 

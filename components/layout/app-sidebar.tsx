@@ -6,6 +6,7 @@ import {
     Sparkles,
     LogOut,
     ChevronsUpDown,
+    ChevronDown,
     Settings,
     User,
     Search,
@@ -28,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { navigationConfig, noPodNavigationConfig, podNavigationConfig, type NavItem, type NavGroup } from "@/lib/navigation";
+import { unifiedNavigationConfig, noPodNavigationConfig, type NavItem, type NavGroup } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -39,6 +40,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { CreateProjectForm } from "@/components/projects/create-project-form";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 interface UserProfile {
     email: string;
@@ -53,6 +55,8 @@ interface AppSidebarProps {
     hideToggle?: boolean;
     fixed?: boolean;
     onNavigate?: () => void;
+    mobileOpen?: boolean;
+    onMobileOpenChange?: (open: boolean) => void;
 }
 
 export function AppSidebar({
@@ -62,6 +66,8 @@ export function AppSidebar({
     hideToggle,
     fixed = true,
     onNavigate,
+    mobileOpen,
+    onMobileOpenChange,
 }: AppSidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
@@ -70,6 +76,20 @@ export function AppSidebar({
     const [selectedPod, setSelectedPod] = useState<{id: string; title: string; npn: string} | null>(null);
     const [loading, setLoading] = useState(true);
     const [createProjectOpen, setCreateProjectOpen] = useState(false);
+    const [taskCount, setTaskCount] = useState(0);
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+    const toggleGroup = (label: string) => {
+        setCollapsedGroups(prev => {
+            const next = new Set(prev);
+            if (next.has(label)) {
+                next.delete(label);
+            } else {
+                next.add(label);
+            }
+            return next;
+        });
+    };
 
     // Extract podId from URL if present
     const podIdMatch = pathname.match(/\/pods\/([^\/]+)/);
@@ -109,6 +129,14 @@ export function AppSidebar({
                         setSelectedPod(podsData[0]);
                     }
                 }
+
+                // Fetch assigned task count (excluding DONE and APPROVED)
+                const { count } = await supabase
+                    .from("task_assignees")
+                    .select("task_id, tasks!inner(id, status)", { count: "exact", head: true })
+                    .eq("user_id", authUser.id)
+                    .not("tasks.status", "in", '("DONE","APPROVED")');
+                setTaskCount(count || 0);
             }
             setLoading(false);
         };
@@ -130,15 +158,8 @@ export function AppSidebar({
         .slice(0, 2);
 
     if (loading) {
-        return (
-            <aside
-                className={cn(
-                    "flex h-svh flex-col border-r border-border/40 bg-background/95 backdrop-blur-sm transition-all duration-200",
-                    fixed ? "fixed left-0 top-0 z-50 hidden md:block" : "relative z-50",
-                    collapsed ? "w-16" : "w-64",
-                    className
-                )}
-            >
+        const skeletonContent = (
+            <>
                 <div className="flex h-14 shrink-0 items-center border-b border-border/30 px-2">
                     <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
                 </div>
@@ -147,36 +168,63 @@ export function AppSidebar({
                     <div className="h-8 bg-muted rounded animate-pulse" />
                     <div className="h-8 bg-muted rounded animate-pulse" />
                 </div>
-            </aside>
+            </>
+        );
+
+        return (
+            <>
+                <aside
+                    className={cn(
+                        "flex h-svh flex-col border-r border-border/40 bg-background/95 backdrop-blur-sm transition-all duration-200",
+                        fixed ? "fixed left-0 top-0 z-50 hidden md:flex" : "relative z-50 hidden md:flex",
+                    collapsed ? "w-16" : "w-56",
+                        className
+                    )}
+                >
+                    {skeletonContent}
+                </aside>
+                {mobileOpen !== undefined && onMobileOpenChange && (
+                    <Sheet open={mobileOpen} onOpenChange={onMobileOpenChange}>
+                        <SheetContent side="left" className="p-0 md:hidden">
+                            <SheetHeader className="sr-only">
+                                <SheetTitle>Navigation Menu</SheetTitle>
+                                <SheetDescription>Access your workspace navigation</SheetDescription>
+                            </SheetHeader>
+                            <div className="flex h-svh w-full flex-col border-r-0 bg-background">
+                                {skeletonContent}
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                )}
+            </>
         )
     }
 
     const hasPods = pods.length > 0
     
-    // Determine which config to use
+    // Use unified config when user has pods, noPod config otherwise
     let activeConfig: NavGroup[] = noPodNavigationConfig;
-    if (currentPodId) {
-        // Replace [podId] placeholder in podNavigationConfig
-        activeConfig = podNavigationConfig.map(group => ({
+    if (hasPods) {
+        // Use currentPodId from URL, fall back to selectedPod
+        const podIdForNav = currentPodId || selectedPod?.id || '';
+        activeConfig = unifiedNavigationConfig.map(group => ({
             ...group,
             items: group.items.map(item => ({
                 ...item,
-                href: item.href.replace('[podId]', currentPodId)
+                href: item.href.replace('[podId]', podIdForNav),
+                // Inject live task count badge on "My Tasks"
+                badge: item.title === "My Tasks" && taskCount > 0 ? taskCount : item.badge,
             }))
         }));
-    } else if (hasPods) {
-        activeConfig = navigationConfig;
     }
 
-    return (
-        <aside
-            className={cn(
-                "flex h-svh flex-col border-r border-border/40 bg-background/95 backdrop-blur-sm transition-all duration-200",
-                fixed ? "fixed left-0 top-0 z-50 hidden md:block" : "relative z-50",
-                collapsed ? "w-16" : "w-64",
-                className
-            )}
-        >
+    const handleMobileNavigate = () => {
+        if (onNavigate) onNavigate();
+        if (onMobileOpenChange) onMobileOpenChange(false);
+    };
+
+    const sidebarContent = (
+        <>
             {/* Header */}
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/30 px-2">
                 {!collapsed && (
@@ -264,27 +312,46 @@ export function AppSidebar({
 
             {/* Navigation */}
             <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-                {activeConfig.map((group) => (
-                    <div key={group.label} className="pb-3">
-                        <div className="text-xs font-semibold text-muted-foreground/60 tracking-wider uppercase px-3 mb-1">
-                            {!collapsed && group.label}
+                {activeConfig.map((group) => {
+                    const isGroupCollapsed = collapsedGroups.has(group.label);
+                    return (
+                        <div key={group.label} className="pb-1">
+                            {!collapsed && (
+                                <button
+                                    onClick={() => toggleGroup(group.label)}
+                                    className="flex items-center justify-between w-full text-xs font-semibold text-muted-foreground/60 tracking-wider uppercase px-3 py-1.5 rounded-md hover:bg-muted/50 hover:text-muted-foreground transition-colors"
+                                >
+                                    <span>{group.label}</span>
+                                    <ChevronDown
+                                        className={`h-3 w-3 transition-transform duration-200 ${
+                                            isGroupCollapsed ? "-rotate-90" : ""
+                                        }`}
+                                    />
+                                </button>
+                            )}
+                            <div
+                                className={`space-y-0.5 overflow-hidden transition-all duration-200 ${
+                                    collapsed || !isGroupCollapsed
+                                        ? "max-h-[1000px] opacity-100 mt-0.5"
+                                        : "max-h-0 opacity-0"
+                                }`}
+                            >
+                                {group.items.map((item) => (
+                                    <NavLink 
+                                        key={item.href} 
+                                        item={item} 
+                                        pathname={pathname} 
+                                        collapsed={collapsed} 
+                                        onNavigate={onNavigate}
+                                        onAction={(action) => {
+                                            if (action === "create-project") setCreateProjectOpen(true);
+                                        }}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                        <div className="space-y-0.5">
-                            {group.items.map((item) => (
-                                <NavLink 
-                                    key={item.href} 
-                                    item={item} 
-                                    pathname={pathname} 
-                                    collapsed={collapsed} 
-                                    onNavigate={onNavigate}
-                                    onAction={(action) => {
-                                        if (action === "create-project") setCreateProjectOpen(true);
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {/* Create Project Modal */}
@@ -378,7 +445,38 @@ export function AppSidebar({
                     )}
                 </Button>
             )}
-        </aside>
+        </>
+    );
+
+    return (
+        <>
+            {/* Desktop Sidebar */}
+            <aside
+                className={cn(
+                    "flex h-svh flex-col border-r border-border/40 bg-background/95 backdrop-blur-sm transition-all duration-200",
+                    fixed ? "fixed left-0 top-0 z-50 hidden md:flex" : "relative z-50 hidden md:flex",
+                    collapsed ? "w-16" : "w-64",
+                    className
+                )}
+            >
+                {sidebarContent}
+            </aside>
+
+            {/* Mobile Sidebar */}
+            {mobileOpen !== undefined && onMobileOpenChange && (
+                <Sheet open={mobileOpen} onOpenChange={onMobileOpenChange}>
+                    <SheetContent side="left" className="p-0 md:hidden">
+                        <SheetHeader className="sr-only">
+                            <SheetTitle>Navigation Menu</SheetTitle>
+                            <SheetDescription>Access your workspace navigation</SheetDescription>
+                        </SheetHeader>
+                        <div className="flex h-svh w-full flex-col border-r-0 bg-background/95 backdrop-blur-sm">
+                            {sidebarContent}
+                        </div>
+                    </SheetContent>
+                </Sheet>
+            )}
+        </>
     );
 }
 
@@ -396,7 +494,7 @@ function NavLink({
     onAction?: (action: string) => void;
 }) {
     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-    const isCreateAction = item.title === "Create Project";
+    const isCreateAction = item.action === "create-project";
 
     const handleClick = (e: React.MouseEvent) => {
         if (isCreateAction && onAction) {

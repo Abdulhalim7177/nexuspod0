@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -48,7 +48,7 @@ import {
 const projectSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
   description: z.string().optional().or(z.literal("")),
-  is_private: z.boolean().default(false),
+  is_private: z.boolean(),
 })
 
 interface ProjectSettingsProps {
@@ -66,9 +66,17 @@ export function ProjectSettings({ project, podId, podMembers }: ProjectSettingsP
     defaultValues: {
       title: project.title,
       description: project.description || "",
-      is_private: project.is_private,
+      is_private: project.is_private ?? false,
     },
   })
+
+  useEffect(() => {
+    form.reset({
+      title: project.title,
+      description: project.description || "",
+      is_private: project.is_private ?? false,
+    })
+  }, [project.title, project.description, project.is_private, form])
 
   async function onUpdate(values: z.infer<typeof projectSchema>) {
     setIsLoading(true)
@@ -138,10 +146,12 @@ export function ProjectSettings({ project, podId, podMembers }: ProjectSettingsP
                     <div className="space-y-0.5">
                       <FormLabel className="flex items-center gap-2 font-bold uppercase tracking-tight text-xs">
                         {field.value ? <Lock className="h-3.5 w-3.5 text-yellow-600" /> : <Globe className="h-3.5 w-3.5 text-green-600" />}
-                        Private Project
+                        {field.value ? "Private Project" : "Public Project"}
                       </FormLabel>
                       <FormDescription className="text-[10px] font-medium">
-                        Private projects are only visible to specific members and pod managers.
+                        {field.value
+                          ? "Private projects are only visible to specific members and pod managers."
+                          : "Public projects are visible to all members of this pod."}
                       </FormDescription>
                     </div>
                     <FormControl>

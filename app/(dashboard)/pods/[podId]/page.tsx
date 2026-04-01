@@ -20,7 +20,8 @@ interface PodPageProps {
   params: Promise<{ podId: string }>
 }
 
-async function PodContent({ podId }: { podId: string }) {
+async function PodContent({ params }: { params: Promise<{ podId: string }> }) {
+  const { podId } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -263,12 +264,10 @@ async function PodContent({ podId }: { podId: string }) {
   )
 }
 
-export default async function PodOverviewPage({ params }: PodPageProps) {
-  const { podId } = await params
-  
+export default function PodOverviewPage({ params }: PodPageProps) {
   return (
     <Suspense fallback={<div className="p-8 space-y-8"><Skeleton className="h-32 w-full" /><Skeleton className="h-64 w-full" /></div>}>
-      <PodContent podId={podId} />
+      <PodContent params={params} />
     </Suspense>
   )
 }

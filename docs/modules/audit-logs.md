@@ -1,38 +1,62 @@
-# 📋 Audit Logs Module
+# Audit Logs Module
 
-> **Phase:** 4 · **Sprint:** 7 · **Status:** ⬜ Not Started
+> **Phase:** 4 · **Sprint:** 7 · **Status:** 🟡 Partial
 
 ## Purpose
 
-Immutable accountability trail answering: **What happened? Who did it? When?** Prevents silent changes and eliminates blame culture in startup teams.
+Audit logs provide an immutable trail of "Who did what and when" inside a Pod. They answer three questions: What happened? Who did it? When did it happen?
 
 ## Features
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| Automatic logging of all mutations | P1 | ⬜ |
-| Immutable (append-only, no update/delete) | P1 | ⬜ |
-| Timeline viewer in Pod settings | P1 | ⬜ |
-| Filter by action type, user, date | P2 | ⬜ |
-
-## Tracked Actions
-
-`CREATE_PROJECT`, `UPDATE_PROJECT`, `DELETE_PROJECT`, `CREATE_TASK`, `UPDATE_TASK`, `DELETE_TASK`, `ADD_MEMBER`, `REMOVE_MEMBER`, `CHANGE_ROLE`, `UPDATE_POD_SETTINGS`
+| `audit_logs` table (append-only via RLS) | P0 | ✅ |
+| Task creation logging | P0 | ✅ |
+| Task status change logging | P0 | ✅ |
+| Project update logging | P0 | ✅ |
+| History feed UI (project detail) | P1 | ✅ |
+| Filter by action type (All, Tasks, Members, Project) | P1 | ✅ |
+| Scrollable activity feed | P1 | ✅ |
+| Database triggers for auto-logging | P1 | 🟡 (manual in server actions) |
+| Pod-level audit viewer | P1 | ⬜ |
+| Member add/remove logging | P1 | 🟡 |
 
 ## Database Tables
 
-- `audit_logs` — pod_id, user_id, action, target_type, target_id, metadata (JSONB)
-
-## RLS Policies
-
-- **SELECT:** Pod members only
-- **INSERT:** System/trigger only
-- **UPDATE:** ❌ Never
-- **DELETE:** ❌ Never
+- `audit_logs` — project_id, pod_id, user_id, action, entity_type, entity_id, old_values, new_values, created_at
 
 ## Key Files
 
 ```
-supabase/migrations/017_*.sql
-components/audit/audit-timeline.tsx
+components/projects/project-history.tsx   # Activity feed component (client-side filter)
+app/(dashboard)/pods/[podId]/projects/[projectId]/page.tsx  # Fetches audit logs
+lib/projects/actions.ts                   # Logs project actions
+lib/tasks/actions.ts                      # Logs task actions
+supabase/migrations/009_*.sql             # audit_logs table
 ```
+
+## Logged Actions
+
+| Action | Entity | Trigger |
+|--------|--------|---------|
+| TASK_CREATED | TASK | Task creation |
+| TASK_STATUS_CHANGED | TASK | Status update |
+| TASK_UPDATED | TASK | Task edit |
+| TASK_APPROVED | TASK | Review approval |
+| TASK_DELETED | TASK | Task deletion |
+| PROJECT_UPDATED | PROJECT | Project settings change |
+| MEMBER_ADDED | MEMBER | Member added to project |
+| MEMBER_REMOVED | MEMBER | Member removed from project |
+
+## RLS Policies
+
+- **SELECT:** Pod members only
+- **INSERT:** System/server actions only
+- **UPDATE:** Never (immutable)
+- **DELETE:** Never (immutable)
+
+## Remaining Work
+
+- Add database-level triggers for automatic logging (currently manual in server actions)
+- Add pod-level audit viewer page
+- Add user-level activity timeline

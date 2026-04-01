@@ -14,13 +14,20 @@ import {
   Settings,
   ArrowRight,
   ShieldAlert,
-  Users2
+  Users2,
+  BarChart3,
+  Target,
+  TrendingUp,
+  AlertCircle,
+  Zap,
+  FileText
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Progress } from "@/components/ui/progress"
 import { getProject, getProjectRequests, requestToJoinProject } from "@/lib/projects/actions"
 import { getProjectTasks } from "@/lib/tasks/actions"
 import { TaskBoard } from "@/components/tasks/task-board"
@@ -72,9 +79,11 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
   const isProjectCreator = project.created_by === user.id
   const isAdmin = ["FOUNDER", "POD_MANAGER"].includes(myPodMember?.role || "") || isProjectCreator
   const canManageTasks = ["FOUNDER", "POD_MANAGER", "TEAM_LEAD"].includes(myPodMember?.role || "") || isProjectCreator
+  const isPublicProject = !project.is_private
 
-  // 3. Handle Restricted Access: IF NOT a member AND NOT an admin
-  if (!isProjectMember && !isAdmin) {
+  // 3. Handle Restricted Access: Only for PRIVATE projects when user is NOT a member AND NOT an admin
+  // Public projects are accessible to all pod members
+  if (!isPublicProject && !isProjectMember && !isAdmin) {
     // Check if there's a pending request
     const { data: pendingRequest } = await supabase
       .from("project_requests")
@@ -119,6 +128,20 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
   const tasks = await getProjectTasks(projectId)
   const pendingRequests = isAdmin ? await getProjectRequests(projectId) : []
   const doneTasks = tasks.filter(t => t.status === 'APPROVED' || t.status === 'DONE').length
+
+  // Fetch audit logs for history
+  const { data: auditLogs } = await supabase
+    .from("audit_logs")
+    .select(`
+      *,
+      user:user_id (
+        full_name,
+        avatar_url
+      )
+    `)
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(50)
 
   return (
     <div className="flex flex-col h-full space-y-6">
@@ -166,35 +189,35 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
         <div className="lg:col-span-3 space-y-6">
           <Tabs defaultValue="tasks" className="w-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <TabsList className="bg-muted/50 p-1 self-start">
-                <TabsTrigger value="tasks" className="gap-2 text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm">
-                  <ListTodo className="h-3.5 w-3.5" /> Board
+              <TabsList className="bg-muted/50 p-1 self-start overflow-x-auto max-w-full flex-nowrap">
+                <TabsTrigger value="tasks" className="gap-1 text-[8px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm whitespace-nowrap px-2 sm:px-3">
+                  <ListTodo className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Board
                 </TabsTrigger>
-                <TabsTrigger value="members" className="gap-2 text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm">
-                  <Users2 className="h-3.5 w-3.5" /> Team
+                <TabsTrigger value="members" className="gap-1 text-[8px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm whitespace-nowrap px-2 sm:px-3">
+                  <Users2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Team
                 </TabsTrigger>
-                <TabsTrigger value="overview" className="gap-2 text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm">
-                  <LayoutDashboard className="h-3.5 w-3.5" /> Brief
+                <TabsTrigger value="overview" className="gap-1 text-[8px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm whitespace-nowrap px-2 sm:px-3">
+                  <LayoutDashboard className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Brief
                 </TabsTrigger>
-                <TabsTrigger value="history" className="gap-2 text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm">
-                  <Clock className="h-3.5 w-3.5" /> History
+                <TabsTrigger value="history" className="gap-1 text-[8px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm whitespace-nowrap px-2 sm:px-3">
+                  <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> History
                 </TabsTrigger>
                 {isAdmin && (
-                  <TabsTrigger value="settings" className="gap-2 text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm text-orange-600 data-[state=active]:text-orange-600">
-                    <Settings className="h-3.5 w-3.5" /> Settings
+                  <TabsTrigger value="settings" className="gap-1 text-[8px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm text-orange-600 data-[state=active]:text-orange-600 whitespace-nowrap px-2 sm:px-3">
+                    <Settings className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Settings
                   </TabsTrigger>
                 )}
-                <TabsTrigger value="chat" className="gap-2 text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm">
-                  <MessageSquare className="h-3.5 w-3.5" /> Chat
+                <TabsTrigger value="chat" className="gap-1 text-[8px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:shadow-sm whitespace-nowrap px-2 sm:px-3">
+                  <MessageSquare className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> Chat
                 </TabsTrigger>
               </TabsList>
               
-              <div className="flex items-center gap-4 text-xs font-bold">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-dashed">
-                   <span className="text-muted-foreground">PROGRESS</span>
+              <div className="flex items-center gap-2 sm:gap-4 text-[9px] sm:text-xs font-bold">
+                <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-muted/30 border border-dashed">
+                   <span className="text-muted-foreground">PROG</span>
                    <span className="text-primary">{tasks.length > 0 ? Math.round((doneTasks / tasks.length) * 100) : 0}%</span>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground uppercase tracking-widest">
+                <div className="hidden sm:flex items-center gap-2 text-muted-foreground uppercase tracking-widest">
                   <span className="text-green-500">{doneTasks}</span>
                   <span>/</span>
                   <span>{tasks.length} DONE</span>
@@ -225,7 +248,7 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
             </TabsContent>
 
             <TabsContent value="history" className="mt-0">
-              <ProjectHistory projectId={projectId} />
+              <ProjectHistory logs={auditLogs || []} />
             </TabsContent>
 
             {isAdmin && (
@@ -239,14 +262,141 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
             )}
 
             <TabsContent value="overview" className="space-y-6 mt-0">
+              {/* Project Description */}
               <Card className="border-primary/10 shadow-sm">
                 <CardHeader className="pb-3 border-b border-dashed mb-4">
-                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/70">Project Brief</CardTitle>
+                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/70 flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Project Brief
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground leading-relaxed text-sm">
                     {project.description || "No description provided for this project."}
                   </p>
+                </CardContent>
+              </Card>
+
+              {/* Progress Overview */}
+              <Card className="border-primary/10 shadow-sm">
+                <CardHeader className="pb-3 border-b border-dashed mb-4">
+                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/70 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" /> Progress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl font-bold text-primary">
+                      {tasks.length > 0 ? Math.round((doneTasks / tasks.length) * 100) : 0}%
+                    </span>
+                    <span className="text-xs text-muted-foreground font-medium">
+                      {doneTasks} of {tasks.length} tasks completed
+                    </span>
+                  </div>
+                  <Progress 
+                    value={tasks.length > 0 ? (doneTasks / tasks.length) * 100 : 0} 
+                    className="h-2.5"
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Task Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="border-primary/10 shadow-sm">
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <div className="flex items-center justify-center gap-1.5 mb-2">
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Total</span>
+                    </div>
+                    <span className="text-2xl font-bold">{tasks.length}</span>
+                  </CardContent>
+                </Card>
+                <Card className="border-green-500/10 shadow-sm">
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <div className="flex items-center justify-center gap-1.5 mb-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-green-600">Done</span>
+                    </div>
+                    <span className="text-2xl font-bold text-green-600">{doneTasks}</span>
+                  </CardContent>
+                </Card>
+                <Card className="border-blue-500/10 shadow-sm">
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <div className="flex items-center justify-center gap-1.5 mb-2">
+                      <Zap className="h-4 w-4 text-blue-500" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-blue-600">Active</span>
+                    </div>
+                    <span className="text-2xl font-bold text-blue-600">
+                      {tasks.filter(t => t.status === 'IN_PROGRESS' || t.status === 'SUBMITTED' || t.status === 'UNDER_REVIEW').length}
+                    </span>
+                  </CardContent>
+                </Card>
+                <Card className="border-orange-500/10 shadow-sm">
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <div className="flex items-center justify-center gap-1.5 mb-2">
+                      <AlertCircle className="h-4 w-4 text-orange-500" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-orange-600">Pending</span>
+                    </div>
+                    <span className="text-2xl font-bold text-orange-600">
+                      {tasks.filter(t => t.status === 'PENDING' || t.status === 'TODO').length}
+                    </span>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Project Details */}
+              <Card className="border-primary/10 shadow-sm">
+                <CardHeader className="pb-3 border-b border-dashed mb-4">
+                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/70 flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" /> Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</span>
+                      <div>
+                        <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] font-bold">
+                          ACTIVE
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Visibility</span>
+                      <div>
+                        {project.is_private ? (
+                          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-[10px] font-bold gap-1">
+                            <Lock className="h-2.5 w-2.5" /> Private
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] font-bold gap-1">
+                            <Globe className="h-2.5 w-2.5" /> Public
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Team Size</span>
+                      <p className="font-bold flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-primary" /> {project.members?.length || 0} Members
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Created</span>
+                      <p className="font-bold flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-primary" /> {new Date(project.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Project Lead</span>
+                      <p className="font-bold">
+                        {podMembers?.find(m => m.user_id === project.created_by)?.user?.full_name || "Nexus Lead"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Pod</span>
+                      <p className="font-bold">{project.pod?.title}</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

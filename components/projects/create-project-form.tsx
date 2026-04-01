@@ -28,7 +28,7 @@ const formSchema = z.object({
   description: z.string().max(1000, {
     message: "Description must not exceed 1000 characters.",
   }).optional().or(z.literal("")),
-  is_private: z.boolean().default(false),
+  is_private: z.boolean(),
 })
 
 interface CreateProjectFormProps {

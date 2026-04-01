@@ -1,6 +1,6 @@
-# 🏠 Pods Module
+# Pods Module
 
-> **Phase:** 1 · **Sprint:** 2 · **Status:** ⬜ Not Started
+> **Phase:** 1 · **Sprint:** 2 · **Status:** ✅ Complete
 
 ## Purpose
 
@@ -10,18 +10,19 @@ Pods are the core workspace entity — isolated multi-tenant environments. Each 
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| Create Pod (title, summary, picture) | P0 | ⬜ |
-| Auto-generate NPN (`NP-XXXXX`) | P0 | ⬜ |
-| Pod isolation (RLS) | P0 | ⬜ |
-| Founder auto-joins as all roles | P0 | ⬜ |
-| Edit Pod settings | P1 | ⬜ |
-| Delete Pod (Founder only) | P1 | ⬜ |
+| Create Pod (title, summary, picture) | P0 | ✅ |
+| Auto-generate NPN (`NP-XXXXX`) | P0 | ✅ |
+| Pod isolation (RLS) | P0 | ✅ |
+| Founder auto-joins as all roles | P0 | ✅ |
+| Edit Pod settings | P1 | ✅ |
+| Delete Pod (Founder only) | P1 | ✅ |
 | Pod social media links | P2 | ⬜ |
-| Invitation link generation | P0 | ⬜ |
-| Join via invitation link | P0 | ⬜ |
-| Role assignment (Founder → Manager) | P0 | ⬜ |
-| Remove members (Founder only) | P1 | ⬜ |
+| Invitation link generation | P0 | ✅ |
+| Join via invitation link | P0 | ✅ |
+| Role assignment (Founder → Manager) | P0 | ✅ |
+| Remove members (Founder only) | P1 | ✅ |
 | Multi-founder governance | P2 | ⬜ |
+| Accurate member count on pod cards | P1 | ✅ |
 
 ## Database Tables
 
@@ -32,11 +33,13 @@ Pods are the core workspace entity — isolated multi-tenant environments. Each 
 ## Key Files
 
 ```
-app/(dashboard)/pods/              # Pod list
+app/(dashboard)/pods/              # Pod list (with member counts)
 app/(dashboard)/pods/new/          # Create Pod
 app/(dashboard)/pods/[podId]/      # Pod overview
 app/(dashboard)/pods/[podId]/settings/
 app/(dashboard)/pods/[podId]/members/
+app/(dashboard)/pods/join/         # Join via code
+lib/pods/actions.ts                # Server actions
 supabase/migrations/002_*.sql      # Pods migration
 supabase/migrations/003_*.sql      # Pod members migration
 supabase/migrations/004_*.sql      # Invitations migration
@@ -54,4 +57,3 @@ supabase/migrations/004_*.sql      # Invitations migration
 
 - `generate_npn` — auto-generates `NP-XXXXX` on Pod creation
 - `auto_join_founder` — creates `pod_members` entry with FOUNDER role
-- `create_pod_chat` — creates a POD-type chat conversation

@@ -1,16 +1,11 @@
 import { Suspense } from "react";
 import { Topbar } from "@/components/layout/topbar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileCompletionCheck } from "@/components/profile-completion-check";
 import { DashboardClient } from "./dashboard-client";
 
-export default async function DashboardLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+async function ProfileData() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -39,9 +34,19 @@ export default async function DashboardLayout({
         }
     }
 
+    return <ProfileCompletionCheck completion={completion} />;
+}
+
+export default function DashboardLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
     return (
         <>
-            <ProfileCompletionCheck completion={completion} />
+            <Suspense fallback={null}>
+                <ProfileData />
+            </Suspense>
             <DashboardClient>{children}</DashboardClient>
         </>
     );

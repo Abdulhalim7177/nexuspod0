@@ -1,7 +1,7 @@
-# 📊 Nexus Pod — Development Progress Tracker
+# Nexus Pod — Development Progress Tracker
 
-> **Last Updated:** 17 March 2026
-> **Status:** 🔴 Pre-Development
+> **Last Updated:** 1 April 2026
+> **Status:** 🟢 Phase 1 & 2 Complete — Phase 3 Next
 
 ---
 
@@ -18,18 +18,18 @@
 
 ## Phase 1: The Foundation (Auth, Pods, Profiles)
 
-**Status:** ⬜ Not Started · **Target:** Weeks 1–4
+**Status:** ✅ Complete
 
 ### Sprint 1: Environment & Auth Cleanup (Week 1–2)
 
 | # | Increment | Status | Notes |
 |---|-----------|--------|-------|
-| 1.1 | Install shadcn/ui sidebar + additional components | ✅ | `npx shadcn add sidebar separator sheet ...` |
-| 1.2 | Remove tutorial / starter kit components | ✅ | `components/tutorial/`, hero, env-var-warning |
+| 1.1 | Install shadcn/ui sidebar + additional components | ✅ | Button, Card, Dialog, Sheet, Tabs, etc. |
+| 1.2 | Remove tutorial / starter kit components | ✅ | Cleaned up default starter |
 | 1.3 | Create `profiles` table + auto-profile trigger | ✅ | Migration `001_create_profiles.sql` |
-| 1.4 | Build dashboard layout (sidebar, topbar, mobile nav) | ✅ | Route group `(dashboard)` |
-| 1.5 | Rewrite landing page for Nexus Pod | ✅ | Replace podcast branding |
-| 1.6 | Build profile settings page | ✅ | Form + server action |
+| 1.4 | Build dashboard layout (sidebar, topbar, mobile nav) | ✅ | Route group `(dashboard)`, unified AppSidebar |
+| 1.5 | Rewrite landing page for Nexus Pod | ✅ | Landing page with project branding |
+| 1.6 | Build profile settings page | ✅ | `/profile` with form + server action |
 | 1.7 | Rewrite dashboard home page | ✅ | Pod-centric stats/overview |
 
 ### Sprint 2: Pod System (Week 3–4)
@@ -40,47 +40,54 @@
 | 2.2 | Create `pod_members` table + RLS | ✅ | Migration `003_create_pod_members.sql` |
 | 2.3 | Create `pod_invitations` table | ✅ | Migration `004_create_pod_invitations.sql` |
 | 2.4 | Create Pod page (form) | ✅ | `/pods/new` |
-| 2.5 | Pod list page | ✅ | `/pods` |
+| 2.5 | Pod list page | ✅ | `/pods` — shows actual member counts |
 | 2.6 | Pod overview page | ✅ | `/pods/[podId]` |
-| 2.7 | Invitation system (generate + join) | ✅ | Implemented in `lib/pods/actions.ts` |
-| 2.8 | Role management UI | ✅ | Actions in `lib/pods/actions.ts` |
+| 2.7 | Invitation system (generate + join) | ✅ | Code-based join flow |
+| 2.8 | Role management UI | ✅ | FOUNDER, POD_MANAGER, TEAM_LEAD, MEMBER |
 | 2.9 | Pod settings page | ✅ | `/pods/[podId]/settings` |
 
 ---
 
 ## Phase 2: Execution Engine (Projects & Tasks)
 
-**Status:** ⬜ Not Started · **Target:** Weeks 5–8
+**Status:** ✅ Complete
 
 ### Sprint 3: Project System (Week 5–6)
 
 | # | Increment | Status | Notes |
 |---|-----------|--------|-------|
-| 3.1 | Create `projects` + `project_members` tables | ⬜ | Public/Private with RLS |
-| 3.2 | Project creation form | ⬜ | Title, description, visibility |
-| 3.3 | Project list page | ⬜ | Grid/list view per Pod |
-| 3.4 | Project detail page | ⬜ | Overview + task board |
-| 3.5 | Private project access control | ⬜ | RLS + member management |
+| 3.1 | Create `projects` + `project_members` tables | ✅ | Migrations `005`, `006` |
+| 3.2 | Project creation form | ✅ | Title, description, visibility toggle |
+| 3.3 | Project list page | ✅ | `/pods/[podId]/projects` |
+| 3.4 | Project detail page | ✅ | Tabbed: Board, Team, Brief, History, Settings, Chat |
+| 3.5 | Private project access control | ✅ | RLS + "Request to Join" for private projects |
+| 3.6 | Project settings (update/delete) | ✅ | Visibility toggle with form sync fix |
+| 3.7 | Project member management | ✅ | Add/remove members, role assignment |
+| 3.8 | Project Brief tab | ✅ | Stats, progress bar, task counts, details grid |
+| 3.9 | Public project access for pod members | ✅ | Pod members can view public projects directly |
 
 ### Sprint 4: Task System & Review Loop (Week 7–8)
 
 | # | Increment | Status | Notes |
 |---|-----------|--------|-------|
-| 4.1 | Create `tasks` + `task_assignees` tables | ⬜ | Status enum, priority |
-| 4.2 | Create `task_comments` table | ⬜ | Text, files, links |
-| 4.3 | Create `task_submissions` + `task_reviews` tables | ⬜ | Review lifecycle |
-| 4.4 | Task board UI (Kanban / List) | ⬜ | Drag-and-drop |
-| 4.5 | Task creation form | ⬜ | All required fields |
-| 4.6 | Task detail page | ⬜ | Full view + comments |
-| 4.7 | DONE / REVERT flow | ⬜ | Assignee evidence submission |
-| 4.8 | APPROVE / CORRECT flow | ⬜ | Assigner review panel |
-| 4.9 | "My Tasks" cross-pod page | ⬜ | `/tasks` |
+| 4.1 | Create `tasks` + `task_assignees` tables | ✅ | Migrations `007`, `017` |
+| 4.2 | Create `task_comments` table | ✅ | Migration for comments |
+| 4.3 | Create `task_submissions` + `task_reviews` tables | ✅ | Review lifecycle tables |
+| 4.4 | Task board UI (Kanban) | ✅ | Status-based columns |
+| 4.5 | Task creation form | ✅ | Title, description, priority, due date, assignees |
+| 4.6 | Task detail page | ✅ | Dialog + Sheet components |
+| 4.7 | DONE / SUBMIT flow | ✅ | Evidence submission with notes |
+| 4.8 | APPROVE / CORRECT flow | ✅ | Reviewer panel with feedback |
+| 4.9 | "My Tasks" cross-pod page | ✅ | `/tasks` |
+| 4.10 | Sub-tasks | ✅ | Real-time add/toggle/remove with local state |
+| 4.11 | Task counter in sidebar | ✅ | Live badge on "My Tasks" nav item |
+| 4.12 | Audit logs for tasks | ✅ | Auto-logged on create/status change |
 
 ---
 
 ## Phase 3: Collaboration (Chat, Files, Notifications)
 
-**Status:** ⬜ Not Started · **Target:** Weeks 9–12
+**Status:** ⬜ Not Started · **Next Phase**
 
 ### Sprint 5: Chat System (Week 9–10)
 
@@ -114,7 +121,7 @@
 
 ## Phase 4: Ecosystem (Opportunities, Audit, Teams)
 
-**Status:** ⬜ Not Started · **Target:** Weeks 13–16
+**Status:** 🟡 Partial
 
 ### Sprint 7: Opportunity Engine & Audit Logs (Week 13–14)
 
@@ -123,9 +130,9 @@
 | 7.1 | Create `opportunities` table | ⬜ | Cross-pod RLS |
 | 7.2 | Opportunities page + form | ⬜ | `/opportunities` |
 | 7.3 | Cross-pod visibility (Nexus Network) | ⬜ | RLS policies |
-| 7.4 | Create `audit_logs` table (append-only) | ⬜ | Immutable trail |
-| 7.5 | Audit log triggers | ⬜ | Auto-log mutations |
-| 7.6 | Audit log viewer | ⬜ | Timeline UI |
+| 7.4 | Create `audit_logs` table (append-only) | ✅ | Immutable trail via RLS |
+| 7.5 | Audit log triggers | 🟡 | Manual logging in server actions |
+| 7.6 | Audit log viewer | ✅ | History tab with filters |
 
 ### Sprint 8: Team Management (Week 15–16)
 
@@ -141,7 +148,7 @@
 
 ## Phase 5: Gamification (Momentum, Streaks, Leaderboard)
 
-**Status:** ⬜ Not Started · **Target:** Weeks 17–20
+**Status:** 🟡 Partial (UI placeholder exists)
 
 ### Sprint 9: Momentum System (Week 17–18)
 
@@ -200,19 +207,34 @@
 
 | Module | Phase | Status | README |
 |--------|-------|--------|--------|
-| Auth & Profiles | 1 | ✅ | [README](./modules/auth-profiles.md) |
-| Pods | 1 | ⬜ | [README](./modules/pods.md) |
-| Projects | 2 | ⬜ | [README](./modules/projects.md) |
-| Tasks | 2 | ⬜ | [README](./modules/tasks.md) |
-| Chat & Messaging | 3 | ⬜ | [README](./modules/chat.md) |
-| Files & Storage | 3 | ⬜ | [README](./modules/files.md) |
-| Notifications | 3 | ⬜ | [README](./modules/notifications.md) |
-| Opportunities | 4 | ⬜ | [README](./modules/opportunities.md) |
-| Audit Logs | 4 | ⬜ | [README](./modules/audit-logs.md) |
-| Teams | 4 | ⬜ | [README](./modules/teams.md) |
-| Momentum & Gamification | 5 | ⬜ | [README](./modules/momentum.md) |
-| Groups & Notes | 6 | ⬜ | [README](./modules/groups-notes.md) |
-| CRM & Governance | 6 | ⬜ | [README](./modules/crm-governance.md) |
-| Calendar & Ops Hub | 6 | ⬜ | [README](./modules/calendar-ops.md) |
-| Mini Websites | 7 | ⬜ | [README](./modules/mini-websites.md) |
-| Integrations | 7 | ⬜ | [README](./modules/integrations.md) |
+| Auth & Profiles | 1 | ✅ Complete | [README](./modules/auth-profiles.md) |
+| Pods | 1 | ✅ Complete | [README](./modules/pods.md) |
+| Projects | 2 | ✅ Complete | [README](./modules/projects.md) |
+| Tasks | 2 | ✅ Complete | [README](./modules/tasks.md) |
+| Chat & Messaging | 3 | ⬜ Not Started | [README](./modules/chat.md) |
+| Files & Storage | 3 | ⬜ Not Started | [README](./modules/files.md) |
+| Notifications | 3 | ⬜ Not Started | [README](./modules/notifications.md) |
+| Opportunities | 4 | ⬜ Not Started | [README](./modules/opportunities.md) |
+| Audit Logs | 4 | 🟡 Partial | [README](./modules/audit-logs.md) |
+| Teams | 4 | ⬜ Not Started | [README](./modules/teams.md) |
+| Momentum & Gamification | 5 | 🟡 Partial | [README](./modules/momentum.md) |
+| Groups & Notes | 6 | ⬜ Not Started | [README](./modules/groups-notes.md) |
+| CRM & Governance | 6 | ⬜ Not Started | [README](./modules/crm-governance.md) |
+| Calendar & Ops Hub | 6 | ⬜ Not Started | [README](./modules/calendar-ops.md) |
+| Mini Websites | 7 | ⬜ Not Started | [README](./modules/mini-websites.md) |
+| Integrations | 7 | ⬜ Not Started | [README](./modules/integrations.md) |
+
+---
+
+## Overall Progress
+
+| Phase | Modules | Status |
+|-------|---------|--------|
+| Phase 1 | Auth, Pods, Profiles | ✅ 100% |
+| Phase 2 | Projects, Tasks | ✅ 100% |
+| Phase 3 | Chat, Files, Notifications | ⬜ 0% |
+| Phase 4 | Opportunities, Audit, Teams | 🟡 ~20% |
+| Phase 5 | Momentum, Leaderboard | 🟡 ~5% |
+| Phase 6+ | Advanced Features | ⬜ 0% |
+
+**Total Estimated Completion: ~45% of core features (Phases 1-2 fully done)**
