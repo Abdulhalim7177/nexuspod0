@@ -347,6 +347,35 @@ export async function markAsRead(conversationId: string) {
   } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
+  // First check if user is a participant
+  const { data: existingParticipant } = await supabase
+    .from("chat_participants")
+    .select("id")
+    .eq("conversation_id", conversationId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  // If not a participant, add them
+  if (!existingParticipant) {
+    // Get conversation info to determine type and permissions
+    const { data: convo } = await supabase
+      .from("chat_conversations")
+      .select("type, pod_id, project_id")
+      .eq("id", conversationId)
+      .single()
+
+    if (convo) {
+      // Add user as participant
+      await supabase.from("chat_participants").insert({
+        conversation_id: conversationId,
+        user_id: user.id,
+        is_admin: false,
+        last_read_at: new Date().toISOString(),
+      })
+    }
+    return { success: true }
+  }
+
   // Update participant's last_read_at
   const { error } = await supabase
     .from("chat_participants")
@@ -355,6 +384,15 @@ export async function markAsRead(conversationId: string) {
     .eq("user_id", user.id)
 
   if (error) return { error: error.message }
+
+  // Delete any chat notifications for this conversation since it's now opened
+  await supabase
+    .from("notifications")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("related_id", conversationId)
+    .eq("related_type", "conversation")
+    .in("type", ["CHAT_MESSAGE", "CHAT_MENTION"])
 
   // Update messages read_by array
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -516,21 +554,49 @@ export async function getConversations() {
   for (const convo of podConvos || []) {
     if (conversations.some((c) => c.id === convo.id)) continue
 
-    // Get last message
+    // Get last message with user data
     const { data: lastMsg } = await supabase
       .from("chat_messages")
-      .select("id, content, type, user_id, created_at")
+      .select("id, content, type, user_id, created_at, user:user_id(full_name)")
       .eq("conversation_id", convo.id)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
+
+    // Get unread count for pod members - handle case where user might not be in participants
+    let unreadCount = 0
+    const { data: participant } = await supabase
+      .from("chat_participants")
+      .select("last_read_at")
+      .eq("conversation_id", convo.id)
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    if (participant) {
+      const { count } = await supabase
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("conversation_id", convo.id)
+        .gt("created_at", participant.last_read_at || "1970-01-01")
+        .neq("user_id", user.id)
+      unreadCount = count || 0
+    } else {
+      // User is not a participant yet - they might have just joined the pod
+      // Get all messages as potential unread
+      const { count } = await supabase
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("conversation_id", convo.id)
+        .neq("user_id", user.id)
+      unreadCount = count || 0
+    }
 
     conversations.push({
       ...convo,
       team_id: null,
       name: convo.name,
       last_message: (lastMsg as unknown as ChatMessage) || undefined,
-      unread_count: 0,
+      unread_count: unreadCount,
     })
   }
 
@@ -538,21 +604,49 @@ export async function getConversations() {
   for (const convo of projectConvos || []) {
     if (conversations.some((c) => c.id === convo.id)) continue
 
-    // Get last message
+    // Get last message with user data
     const { data: lastMsg } = await supabase
       .from("chat_messages")
-      .select("id, content, type, user_id, created_at")
+      .select("id, content, type, user_id, created_at, user:user_id(full_name)")
       .eq("conversation_id", convo.id)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
+
+    // Get unread count for project members - handle case where user might not be in participants
+    let unreadCount = 0
+    const { data: participant } = await supabase
+      .from("chat_participants")
+      .select("last_read_at")
+      .eq("conversation_id", convo.id)
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    if (participant) {
+      const { count } = await supabase
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("conversation_id", convo.id)
+        .gt("created_at", participant.last_read_at || "1970-01-01")
+        .neq("user_id", user.id)
+      unreadCount = count || 0
+    } else {
+      // User is not a participant yet - they might have just joined the project
+      // Get all messages as potential unread
+      const { count } = await supabase
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("conversation_id", convo.id)
+        .neq("user_id", user.id)
+      unreadCount = count || 0
+    }
 
     conversations.push({
       ...convo,
       team_id: null,
       name: convo.name,
       last_message: (lastMsg as unknown as ChatMessage) || undefined,
-      unread_count: 0,
+      unread_count: unreadCount,
     })
   }
 

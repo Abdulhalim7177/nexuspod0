@@ -89,6 +89,27 @@ export async function createTask(projectId: string, podId: string, formData: For
         }
       }
     }
+
+    // Notify project members about new task (except creator)
+    const { data: projectMembers } = await supabase
+      .from("project_members")
+      .select("user_id")
+      .eq("project_id", projectId)
+      .neq("user_id", user.id)
+
+    if (projectMembers) {
+      for (const member of projectMembers) {
+        await createNotification(
+          member.user_id,
+          "SYSTEM",
+          "New Task Created",
+          `A new task "${title}" was created in the project`,
+          `/pods/${podId}/projects/${projectId}`,
+          task.id,
+          "task"
+        )
+      }
+    }
   }
 
   revalidatePath(`/pods/${podId}/projects/${projectId}`)
@@ -97,13 +118,70 @@ export async function createTask(projectId: string, podId: string, formData: For
 
 export async function updateTaskStatus(taskId: string, status: string, podId: string, projectId: string) {
   const supabase = await createClient()
-  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated" }
+
+  // Get old task to compare status
+  const { data: oldTask } = await supabase
+    .from("tasks")
+    .select("title, status, created_by")
+    .eq("id", taskId)
+    .single()
+
   const { error } = await supabase
     .from("tasks")
     .update({ status })
     .eq("id", taskId)
 
   if (error) return { error: error.message }
+
+  // Notify stakeholders about status change
+  if (oldTask && oldTask.status !== status) {
+    // Get project info
+    const { data: project } = await supabase
+      .from("projects")
+      .select("created_by, pod_id")
+      .eq("id", projectId)
+      .single()
+
+    // Get pod founder
+    const { data: pod } = await supabase
+      .from("pods")
+      .select("founder_id")
+      .eq("id", podId)
+      .single()
+
+    // Get assignees
+    const { data: assignees } = await supabase
+      .from("task_assignees")
+      .select("user_id")
+      .eq("task_id", taskId)
+
+    // Collect stakeholders
+    const stakeholders = new Set<string>()
+
+    if (oldTask.created_by) stakeholders.add(oldTask.created_by)
+    if (project?.created_by) stakeholders.add(project.created_by)
+    if (pod?.founder_id) stakeholders.add(pod.founder_id)
+    if (assignees) {
+      for (const a of assignees) stakeholders.add(a.user_id)
+    }
+
+    // Notify all stakeholders except the user making the change
+    for (const stakeholderId of stakeholders) {
+      if (stakeholderId !== user.id) {
+        await createNotification(
+          stakeholderId,
+          "SYSTEM",
+          "Task Status Updated",
+          `"${oldTask.title}" status changed to ${status.replace('_', ' ')}`,
+          `/pods/${podId}/projects/${projectId}`,
+          taskId,
+          "task"
+        )
+      }
+    }
+  }
 
   revalidatePath(`/pods/${podId}/projects/${projectId}`)
   return { success: true }
@@ -132,10 +210,10 @@ export async function submitTask(taskId: string, description: string, podId: str
 
   if (subError) return { error: subError.message }
 
-  // 2. Update task status to DONE
+  // 2. Update task status to IN_REVIEW (not DONE - waiting for review)
   await supabase
     .from("tasks")
-    .update({ status: 'DONE' })
+    .update({ status: 'IN_REVIEW' })
     .eq("id", taskId)
 
   // 3. Notify task creator
@@ -149,6 +227,29 @@ export async function submitTask(taskId: string, description: string, podId: str
       taskId,
       "task"
     )
+  }
+
+  // Also notify project members about the submission
+  const { data: projectMembers } = await supabase
+    .from("project_members")
+    .select("user_id")
+    .eq("project_id", projectId)
+    .neq("user_id", user.id)
+
+  if (projectMembers) {
+    for (const member of projectMembers) {
+      if (member.user_id !== task?.created_by) {
+        await createNotification(
+          member.user_id,
+          "SYSTEM",
+          "Task Submitted",
+          `${user.email} submitted "${task?.title}" for review`,
+          `/pods/${podId}/projects/${projectId}`,
+          taskId,
+          "task"
+        )
+      }
+    }
   }
 
   revalidatePath(`/pods/${podId}/projects/${projectId}`)
@@ -188,7 +289,7 @@ export async function reviewTask(taskId: string, submissionId: string, action: '
   if (revError) return { error: revError.message }
 
   // 2. Update task status
-  const newStatus = action === 'APPROVED' ? 'APPROVED' : 'ONGOING'
+  const newStatus = action === 'APPROVED' ? 'APPROVED' : 'IN_PROGRESS'
   await supabase
     .from("tasks")
     .update({ status: newStatus })
@@ -213,6 +314,30 @@ export async function reviewTask(taskId: string, submissionId: string, action: '
     )
   }
 
+  // Also notify project members about the review
+  const { data: projectMembers } = await supabase
+    .from("project_members")
+    .select("user_id")
+    .eq("project_id", projectId)
+    .neq("user_id", user.id)
+
+  if (projectMembers) {
+    for (const member of projectMembers) {
+      const isSubmitter = submission?.submitted_by === member.user_id
+      if (!isSubmitter) {
+        await createNotification(
+          member.user_id,
+          "SYSTEM",
+          action === 'APPROVED' ? "Task Approved" : "Task Needs Revision",
+          `"${task?.title}" ${action === 'APPROVED' ? 'was approved' : 'needs revision'}`,
+          `/pods/${podId}/projects/${projectId}`,
+          taskId,
+          "task"
+        )
+      }
+    }
+  }
+
   revalidatePath(`/pods/${podId}/projects/${projectId}`)
   return { success: true }
 }
@@ -223,7 +348,7 @@ export async function updateTaskDetails(taskId: string, details: any, podId: str
   // Get current task info for comparison
   const { data: oldTask } = await supabase
     .from("tasks")
-    .select("title, status, priority, due_date")
+    .select("title, status, priority, due_date, created_by")
     .eq("id", taskId)
     .single()
 
@@ -258,18 +383,46 @@ export async function updateTaskDetails(taskId: string, details: any, podId: str
     }
 
     if (changes.length > 0) {
-      for (const assignee of assignees) {
-        // Verify assignee is still assigned before notifying
-        const { data: stillAssigned } = await supabase
-          .from("task_assignees")
-          .select("id")
-          .eq("task_id", taskId)
-          .eq("user_id", assignee.user_id)
-          .maybeSingle()
+      // Get current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      const currentUserId = currentUser?.id
 
-        if (stillAssigned) {
+      // Get project info to find project creator
+      const { data: project } = await supabase
+        .from("projects")
+        .select("created_by, pod_id")
+        .eq("id", projectId)
+        .single()
+
+      // Get pod founder
+      const { data: pod } = await supabase
+        .from("pods")
+        .select("founder_id")
+        .eq("id", podId)
+        .single()
+
+      // Collect unique stakeholders to notify
+      const stakeholders = new Set<string>()
+
+      // Add task creator
+      if (oldTask.created_by) stakeholders.add(oldTask.created_by)
+
+      // Add project creator
+      if (project?.created_by) stakeholders.add(project.created_by)
+
+      // Add pod founder
+      if (pod?.founder_id) stakeholders.add(pod.founder_id)
+
+      // Add assignees
+      for (const assignee of assignees) {
+        stakeholders.add(assignee.user_id)
+      }
+
+      // Notify all stakeholders except the user making the update
+      for (const stakeholderId of stakeholders) {
+        if (stakeholderId !== currentUserId) {
           await createNotification(
-            assignee.user_id,
+            stakeholderId,
             "SYSTEM",
             "Task Updated",
             `"${oldTask.title}" ${changes.join(" and ")} updated`,
@@ -328,6 +481,67 @@ export async function editTask(taskId: string, podId: string, projectId: string,
       const { error: assigneeError } = await supabase.from("task_assignees").insert(assigneeData)
       if (assigneeError) {
         console.error("Error inserting assignees:", assigneeError)
+      }
+    }
+  }
+
+  // Get task info and notify stakeholders
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("title, created_by")
+    .eq("id", taskId)
+    .single()
+
+  if (task) {
+    // Get project info to find project creator
+    const { data: project } = await supabase
+      .from("projects")
+      .select("created_by, pod_id")
+      .eq("id", projectId)
+      .single()
+
+    // Get pod founder
+    const { data: pod } = await supabase
+      .from("pods")
+      .select("founder_id")
+      .eq("id", podId)
+      .single()
+
+    // Get current user
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    const currentUserId = currentUser?.id
+
+    // Collect unique stakeholders to notify
+    const stakeholders = new Set<string>()
+
+    // Add task creator
+    if (task.created_by) stakeholders.add(task.created_by)
+
+    // Add project creator
+    if (project?.created_by) stakeholders.add(project.created_by)
+
+    // Add pod founder
+    if (pod?.founder_id) stakeholders.add(pod.founder_id)
+
+    // Add assignees
+    if (assignees) {
+      for (const userId of assignees) {
+        if (userId && userId.trim() !== "") stakeholders.add(userId)
+      }
+    }
+
+    // Notify all stakeholders except the user making the update
+    for (const stakeholderId of stakeholders) {
+      if (stakeholderId !== currentUserId) {
+        await createNotification(
+          stakeholderId,
+          "SYSTEM",
+          "Task Updated",
+          `"${task.title}" was updated`,
+          `/pods/${podId}/projects/${projectId}`,
+          taskId,
+          "task"
+        )
       }
     }
   }

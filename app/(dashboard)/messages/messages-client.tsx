@@ -9,6 +9,7 @@ import {
   getOrCreateDM,
   getOrCreateProjectConversation,
   getUserProjectConversations,
+  markAsRead,
   type Conversation,
 } from "@/lib/chat/actions"
 import { createClient } from "@/lib/supabase/client"
@@ -136,9 +137,33 @@ export function MessagesClient({
           const newMsg = payload.new as { conversation_id: string; user_id: string }
           // Only update if it's not our own message
           if (newMsg.user_id !== currentUserId) {
-            // Refresh conversations to update unread counts
+            // Refresh conversations to update unread counts and last messages
             await loadConversations()
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "chat_messages",
+        },
+        async (payload) => {
+          // Refresh to show updated last message
+          await loadConversations()
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "chat_messages",
+        },
+        async () => {
+          // Refresh to update message list
+          await loadConversations()
         }
       )
       .subscribe()
@@ -174,11 +199,15 @@ export function MessagesClient({
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          await presenceChannel.track({
-            online_at: new Date().toISOString(),
-            typing: false,
-            conversation_id: null,
-          })
+          try {
+            await presenceChannel.track({
+              online_at: new Date().toISOString(),
+              typing: false,
+              conversation_id: null,
+            })
+          } catch (err) {
+            console.error("Presence track error:", err)
+          }
         }
       })
 
@@ -187,6 +216,13 @@ export function MessagesClient({
       supabase.removeChannel(presenceChannel)
     }
   }, [currentUserId, loadConversations, supabase])
+
+  // Mark conversation as read when opened
+  useEffect(() => {
+    if (activeConversation) {
+      markAsRead(activeConversation.id)
+    }
+  }, [activeConversation])
 
   const handleStartDM = async (userId: string) => {
     setStartingChat(userId)

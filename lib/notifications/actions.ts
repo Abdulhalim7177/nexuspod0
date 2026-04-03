@@ -157,6 +157,13 @@ export async function createNotification(
 ) {
   const supabase = await createClient()
 
+  // Get target user email for email notification
+  const { data: targetUser } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", targetUserId)
+    .single()
+
   const { error } = await supabase.rpc("create_notification", {
     p_user_id: targetUserId,
     p_type: type,
@@ -170,6 +177,23 @@ export async function createNotification(
   if (error) {
     console.error("Error creating notification:", error)
     return { error: error.message }
+  }
+
+  // Also send email notification
+  if (targetUser?.email && process.env.SMTP_HOST) {
+    try {
+      const { sendNotificationEmail } = await import("@/lib/email")
+      await sendNotificationEmail({
+        to: targetUser.email,
+        userName: targetUser.full_name || "there",
+        type,
+        title,
+        message: body || `You have a new notification: ${title}`,
+        actionUrl: link,
+      })
+    } catch (emailError) {
+      console.error("Error sending email:", emailError)
+    }
   }
 
   return { success: true }

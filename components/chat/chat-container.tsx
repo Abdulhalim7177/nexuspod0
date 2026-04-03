@@ -163,10 +163,14 @@ export function ChatContainer({
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          await presenceChannel.track({
-            online_at: new Date().toISOString(),
-            typing: false,
-          })
+          try {
+            await presenceChannel.track({
+              online_at: new Date().toISOString(),
+              typing: false,
+            })
+          } catch (err) {
+            console.error("Presence track error:", err)
+          }
         }
       })
 
@@ -203,16 +207,24 @@ export function ChatContainer({
     [conversation.id, replyTo]
   )
 
+  // Handle typing - use a separate typing channel
   const handleTyping = useCallback(
     async (isTyping: boolean) => {
-      const supabase = supabaseRef.current
-      const channel = supabase.channel(`presence:${conversation.id}`)
-      await channel.track({
-        online_at: new Date().toISOString(),
-        typing: isTyping,
-      })
+      if (!currentUserId || !supabaseRef.current) return
+      
+      try {
+        const supabase = supabaseRef.current
+        const typingChannel = supabase.channel(`typing:${conversation.id}`)
+        
+        await typingChannel.track({
+          user_id: currentUserId,
+          is_typing: isTyping,
+        })
+      } catch (err) {
+        // Silently ignore typing errors
+      }
     },
-    [conversation.id]
+    [conversation.id, currentUserId]
   )
 
   return (

@@ -35,8 +35,18 @@ export function NotificationBell({ className }: NotificationBellProps) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const supabase = createClient()
   const router = useRouter()
+
+  // Get current user on mount
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setCurrentUserId(user?.id || null)
+    }
+    getUser()
+  }, [supabase])
 
   const loadNotifications = useCallback(async () => {
     setLoading(true)
@@ -74,14 +84,53 @@ export function NotificationBell({ className }: NotificationBellProps) {
           setNotifications((prev) => [newNotif, ...prev])
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "notifications",
+        },
+        () => {
+          loadNotifications()
+          loadUnreadCount()
+        }
+      )
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase])
+  }, [supabase, loadNotifications, loadUnreadCount])
 
   const handleMarkAsRead = async (notificationId: string) => {
+    const notification = notifications.find((n) => n.id === notificationId)
+    if (!notification) return
+
+    const isChatNotification = notification.type === "CHAT_MESSAGE" || notification.type === "CHAT_MENTION"
+
+    // If it's a chat notification, check if the conversation was already opened
+    if (isChatNotification && notification.related_id) {
+      const { data: participant } = await supabase
+        .from("chat_participants")
+        .select("last_read_at")
+        .eq("conversation_id", notification.related_id)
+        .eq("user_id", currentUserId)
+        .maybeSingle()
+
+      const lastMessageTime = notification.created_at
+      
+      // If user has opened the conversation (last_read_at is after the notification), delete it
+      if (participant?.last_read_at && new Date(participant.last_read_at) > new Date(lastMessageTime)) {
+        await deleteNotification(notificationId)
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+        if (!notification.is_read) {
+          setUnreadCount((prev) => Math.max(0, prev - 1))
+        }
+        return
+      }
+    }
+
     await markNotificationAsRead(notificationId)
     setNotifications((prev) =>
       prev.map((n) =>
@@ -127,7 +176,6 @@ export function NotificationBell({ className }: NotificationBellProps) {
       
       // Get conversation details to determine where to navigate
       if (notification.related_type === "conversation" && notification.related_id) {
-        // Fetch conversation to get type and IDs
         const { data: convo } = await supabase
           .from("chat_conversations")
           .select("type, pod_id, project_id")
@@ -136,7 +184,6 @@ export function NotificationBell({ className }: NotificationBellProps) {
         
         if (convo) {
           if (convo.type === "DM") {
-            // For DM, go to messages page
             router.push("/messages")
           } else if (convo.type === "PROJECT" && convo.project_id) {
             router.push(`/pods/${convo.pod_id}/projects/${convo.project_id}/chat`)
@@ -155,10 +202,41 @@ export function NotificationBell({ className }: NotificationBellProps) {
       return
     }
 
-    // For task, project, pod notifications - delete them entirely after clicking
-    if (isTaskNotification || isProjectNotification || isPodNotification) {
+    // For task notifications - navigate to the project page where the task is
+    if (isTaskNotification && notification.related_id) {
       await deleteNotification(notification.id)
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
+      
+      // Get task info to find the project
+      const { data: task } = await supabase
+        .from("tasks")
+        .select("pod_id, project_id")
+        .eq("id", notification.related_id)
+        .single()
+      
+      if (task) {
+        router.push(`/pods/${task.pod_id}/projects/${task.project_id}`)
+      }
+      setOpen(false)
+      return
+    }
+
+    // For project notifications - navigate to the project page
+    if (isProjectNotification && notification.related_id) {
+      await deleteNotification(notification.id)
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
+      router.push(`/pods/${notification.link?.split('/')[2]}/projects/${notification.related_id}`)
+      setOpen(false)
+      return
+    }
+
+    // For pod notifications - navigate to the pod page
+    if (isPodNotification && notification.related_id) {
+      await deleteNotification(notification.id)
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
+      router.push(`/pods/${notification.related_id}`)
+      setOpen(false)
+      return
     }
 
     // Navigate to the appropriate page
