@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createNotification } from "@/lib/notifications/actions"
 
 export type ConversationType = "POD" | "PROJECT" | "TEAM" | "DM" | "GROUP"
 
@@ -144,6 +145,26 @@ export async function sendMessage(
 
   if (!content.trim()) return { error: "Message cannot be empty" }
 
+  // Get user profile for notification
+  const { data: userProfile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .single()
+
+  // Get conversation and participants
+  const { data: conversation } = await supabase
+    .from("chat_conversations")
+    .select("id, type, pod_id, project_id, name")
+    .eq("id", conversationId)
+    .single()
+
+  const { data: participants } = await supabase
+    .from("chat_participants")
+    .select("user_id")
+    .eq("conversation_id", conversationId)
+    .neq("user_id", user.id)
+
   const { data: message, error } = await supabase
     .from("chat_messages")
     .insert({
@@ -165,6 +186,72 @@ export async function sendMessage(
   if (error) {
     console.error("Error sending message:", error)
     return { error: error.message }
+  }
+
+  // Notify participants about new message
+  if (participants && conversation) {
+    for (const participant of participants) {
+      // Verify participant is still in the conversation
+      const { data: stillInConvo } = await supabase
+        .from("chat_participants")
+        .select("id")
+        .eq("conversation_id", conversationId)
+        .eq("user_id", participant.user_id)
+        .maybeSingle()
+
+      if (!stillInConvo) continue
+
+      const convoName = conversation.type === "DM" 
+        ? userProfile?.full_name 
+        : conversation.name || "a chat"
+      
+      await createNotification(
+        participant.user_id,
+        "CHAT_MESSAGE",
+        "New Message",
+        `${userProfile?.full_name || 'Someone'} sent a message in ${convoName}`,
+        `/messages`,
+        conversationId,
+        "conversation"
+      )
+    }
+  }
+
+  // Check for @mentions and notify separately
+  const mentionRegex = /@(\w+)/g
+  const mentions = content.match(mentionRegex)
+  if (mentions) {
+    const usernames = mentions.map(m => m.substring(1))
+    const { data: mentionedUsers } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("username", usernames)
+
+    if (mentionedUsers) {
+      for (const mentioned of mentionedUsers) {
+        // Verify mentioned user is still a participant
+        const { data: stillInConvo } = await supabase
+          .from("chat_participants")
+          .select("id")
+          .eq("conversation_id", conversationId)
+          .eq("user_id", mentioned.id)
+          .maybeSingle()
+
+        // Don't double-notify if they're already getting a message notification
+        const isParticipant = participants?.some(p => p.user_id === mentioned.id)
+        if (mentioned.id !== user.id && (!isParticipant || !stillInConvo)) {
+          await createNotification(
+            mentioned.id,
+            "CHAT_MENTION",
+            "You were mentioned",
+            `${userProfile?.full_name || 'Someone'} mentioned you in ${conversation?.name || 'chat'}`,
+            `/messages`,
+            conversationId,
+            "conversation"
+          )
+        }
+      }
+    }
   }
 
   return { success: true, message }
@@ -327,11 +414,57 @@ export async function getConversations() {
     return { error: error.message, conversations: [] as Conversation[] }
   }
 
+  // Get user's pod memberships
+  const { data: podMemberships } = await supabase
+    .from("pod_members")
+    .select("pod_id, pod:pods(id, title)")
+    .eq("user_id", user.id)
+
+  // Get user's project memberships
+  const { data: projectMemberships } = await supabase
+    .from("project_members")
+    .select("project_id, project:projects(id, title, pod_id, is_private)")
+    .eq("user_id", user.id)
+
+  // Get public projects from user's pods
+  const podIds = podMemberships?.map((m) => m.pod_id) || []
+  const { data: publicProjects } = podIds.length > 0
+    ? await supabase
+        .from("projects")
+        .select("id, title, pod_id, is_private")
+        .eq("is_private", false)
+        .in("pod_id", podIds)
+    : { data: [] }
+
+  // Get all pod chat conversations user has access to
+  const { data: podConvos } = await supabase
+    .from("chat_conversations")
+    .select("id, type, pod_id, project_id, name, avatar_url, is_private, created_at, updated_at")
+    .eq("type", "POD")
+    .in("pod_id", podIds)
+
+  // Get all project chat conversations user has access to
+  const memberProjectIds = projectMemberships?.map((m) => m.project_id) || []
+  const publicProjectIds = publicProjects?.map((p) => p.id) || []
+  const allProjectIds = [...new Set([...memberProjectIds, ...publicProjectIds])]
+
+  const { data: projectConvos } = allProjectIds.length > 0
+    ? await supabase
+        .from("chat_conversations")
+        .select("id, type, pod_id, project_id, name, avatar_url, is_private, created_at, updated_at")
+        .eq("type", "PROJECT")
+        .in("project_id", allProjectIds)
+    : { data: [] }
+
   const conversations: Conversation[] = []
 
+  // Process explicit participations (DMs, etc)
   for (const p of participations || []) {
     const convo = p.conversation as unknown as Conversation | null
     if (!convo) continue
+
+    // Skip pod/project chats - we'll add them from memberships
+    if (convo.type === "POD" || convo.type === "PROJECT") continue
 
     // Get last message
     const { data: lastMsg } = await supabase
@@ -376,6 +509,50 @@ export async function getConversations() {
       name: displayName,
       last_message: (lastMsg as unknown as ChatMessage) || undefined,
       unread_count: count || 0,
+    })
+  }
+
+  // Add pod conversations from memberships
+  for (const convo of podConvos || []) {
+    if (conversations.some((c) => c.id === convo.id)) continue
+
+    // Get last message
+    const { data: lastMsg } = await supabase
+      .from("chat_messages")
+      .select("id, content, type, user_id, created_at")
+      .eq("conversation_id", convo.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    conversations.push({
+      ...convo,
+      team_id: null,
+      name: convo.name,
+      last_message: (lastMsg as unknown as ChatMessage) || undefined,
+      unread_count: 0,
+    })
+  }
+
+  // Add project conversations from memberships
+  for (const convo of projectConvos || []) {
+    if (conversations.some((c) => c.id === convo.id)) continue
+
+    // Get last message
+    const { data: lastMsg } = await supabase
+      .from("chat_messages")
+      .select("id, content, type, user_id, created_at")
+      .eq("conversation_id", convo.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    conversations.push({
+      ...convo,
+      team_id: null,
+      name: convo.name,
+      last_message: (lastMsg as unknown as ChatMessage) || undefined,
+      unread_count: 0,
     })
   }
 
@@ -660,6 +837,75 @@ export async function getPodMembersForChat(podId: string) {
   if (error) return { error: error.message, members: [] }
 
   return { members }
+}
+
+// ─── Get User's Project Conversations ────────────────────────
+
+export async function getUserProjectConversations() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authenticated", projects: [] }
+
+  // Get all project members where user is a member
+  const { data: projectMemberships } = await supabase
+    .from("project_members")
+    .select("project_id, project:project_id(id, title, pod_id)")
+    .eq("user_id", user.id)
+
+  // Also get public projects from user's pods
+  const { data: podMemberships } = await supabase
+    .from("pod_members")
+    .select("pod_id, pod:pod_id(id)")
+    .eq("user_id", user.id)
+
+  const podIds = podMemberships?.map((m) => m.pod_id) || []
+
+  const { data: publicProjects } = await supabase
+    .from("projects")
+    .select("id, title, pod_id")
+    .eq("is_private", false)
+    .in("pod_id", podIds)
+
+  // Get all unique project IDs
+  const memberProjectIds = projectMemberships?.map((m) => m.project_id) || []
+  const publicProjectIds = publicProjects?.map((p) => p.id) || []
+  const allProjectIds = [...new Set([...memberProjectIds, ...publicProjectIds])]
+
+  if (allProjectIds.length === 0) {
+    return { projects: [] }
+  }
+
+  // Get conversations for these projects
+  const { data: conversations } = await supabase
+    .from("chat_conversations")
+    .select("id, type, pod_id, project_id, name, avatar_url")
+    .eq("type", "PROJECT")
+    .in("project_id", allProjectIds)
+
+  // Enrich with project info
+  const projectInfoMap = new Map<string, { id: string; title: string; pod_id: string }>()
+
+  for (const membership of projectMemberships || []) {
+    if (membership.project && typeof membership.project === 'object') {
+      const proj = membership.project as unknown as { id: string; title: string; pod_id: string }
+      projectInfoMap.set(membership.project_id, proj)
+    }
+  }
+
+  for (const proj of publicProjects || []) {
+    if (!projectInfoMap.has(proj.id)) {
+      projectInfoMap.set(proj.id, proj)
+    }
+  }
+
+  const projectsWithChats = (conversations || []).map((convo) => ({
+    ...convo,
+    project: projectInfoMap.get(convo.project_id || "") || null,
+  }))
+
+  return { projects: projectsWithChats }
 }
 
 // ─── Toggle Pin ──────────────────────────────────────────────

@@ -338,7 +338,7 @@ export function TaskDetailSheet({
                 </div>
                 <Button variant="ghost" className="w-full text-xs font-bold uppercase opacity-50" onClick={() => setView('DETAILS')}>Back</Button>
               </div>
-            ) : setView('DETAILS'))}
+            ) : null)}
           </div>
         </div>
 

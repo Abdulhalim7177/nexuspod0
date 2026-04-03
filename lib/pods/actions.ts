@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { redirect } from "next/navigation"
+import { createNotification } from "@/lib/notifications/actions"
 
 const podSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -209,6 +210,34 @@ export async function joinPod(inviteCode: string) {
 
   if (memberError) {
     return { error: "Failed to join pod." }
+  }
+
+  // Get pod info for notification
+  const { data: pod } = await supabase
+    .from("pods")
+    .select("title")
+    .eq("id", invitation.pod_id)
+    .single()
+
+  // Notify all existing pod members about new member
+  const { data: existingMembers } = await supabase
+    .from("pod_members")
+    .select("user_id")
+    .eq("pod_id", invitation.pod_id)
+    .neq("user_id", user.id)
+
+  if (existingMembers && pod) {
+    for (const member of existingMembers) {
+      await createNotification(
+        member.user_id,
+        "MEMBER_JOINED",
+        "New Member Joined",
+        `${user.email} joined your pod "${pod.title}"`,
+        `/pods/${invitation.pod_id}`,
+        invitation.pod_id,
+        "pod"
+      )
+    }
   }
 
   await supabase

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { createNotification } from "@/lib/notifications/actions"
 
 const taskSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -63,6 +64,31 @@ export async function createTask(projectId: string, podId: string, formData: For
     if (assigneeError) {
       console.error("Error inserting assignees:", assigneeError)
     }
+
+    // Notify assignees
+    for (const userId of assignees) {
+      if (userId !== user.id) {
+        // Verify user is still an assignee before sending notification
+        const { data: stillAssigned } = await supabase
+          .from("task_assignees")
+          .select("id")
+          .eq("task_id", task.id)
+          .eq("user_id", userId)
+          .maybeSingle()
+        
+        if (stillAssigned) {
+          await createNotification(
+            userId,
+            "TASK_ASSIGNED",
+            "New Task Assigned",
+            `You have been assigned to "${title}"`,
+            `/pods/${podId}/projects/${projectId}`,
+            task.id,
+            "task"
+          )
+        }
+      }
+    }
   }
 
   revalidatePath(`/pods/${podId}/projects/${projectId}`)
@@ -88,6 +114,13 @@ export async function submitTask(taskId: string, description: string, podId: str
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
+  // Get task info
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("title, created_by")
+    .eq("id", taskId)
+    .single()
+
   // 1. Create submission
   const { error: subError } = await supabase
     .from("task_submissions")
@@ -105,6 +138,19 @@ export async function submitTask(taskId: string, description: string, podId: str
     .update({ status: 'DONE' })
     .eq("id", taskId)
 
+  // 3. Notify task creator
+  if (task && task.created_by !== user.id) {
+    await createNotification(
+      task.created_by,
+      "TASK_SUBMITTED",
+      "Task Submitted for Review",
+      `"${task.title}" has been submitted for review`,
+      `/pods/${podId}/projects/${projectId}`,
+      taskId,
+      "task"
+    )
+  }
+
   revalidatePath(`/pods/${podId}/projects/${projectId}`)
   return { success: true }
 }
@@ -113,6 +159,20 @@ export async function reviewTask(taskId: string, submissionId: string, action: '
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
+
+  // Get task info
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("title, created_by")
+    .eq("id", taskId)
+    .single()
+
+  // Get submitter
+  const { data: submission } = await supabase
+    .from("task_submissions")
+    .select("submitted_by")
+    .eq("id", submissionId)
+    .single()
 
   // 1. Create review
   const { error: revError } = await supabase
@@ -134,6 +194,25 @@ export async function reviewTask(taskId: string, submissionId: string, action: '
     .update({ status: newStatus })
     .eq("id", taskId)
 
+  // 3. Notify submitter (verify they're still the submitter)
+  if (submission && task && submission.submitted_by !== user.id) {
+    const notifyType = action === 'APPROVED' ? 'TASK_APPROVED' : 'TASK_REJECTED'
+    const notifyTitle = action === 'APPROVED' ? 'Task Approved' : 'Task Needs Revision'
+    const notifyBody = action === 'APPROVED' 
+      ? `"${task.title}" has been approved!`
+      : `"${task.title}" needs revision: ${feedback}`
+
+    await createNotification(
+      submission.submitted_by,
+      notifyType,
+      notifyTitle,
+      notifyBody,
+      `/pods/${podId}/projects/${projectId}`,
+      taskId,
+      "task"
+    )
+  }
+
   revalidatePath(`/pods/${podId}/projects/${projectId}`)
   return { success: true }
 }
@@ -141,6 +220,19 @@ export async function reviewTask(taskId: string, submissionId: string, action: '
 export async function updateTaskDetails(taskId: string, details: any, podId: string, projectId: string) {
   const supabase = await createClient()
   
+  // Get current task info for comparison
+  const { data: oldTask } = await supabase
+    .from("tasks")
+    .select("title, status, priority, due_date")
+    .eq("id", taskId)
+    .single()
+
+  // Get assignees
+  const { data: assignees } = await supabase
+    .from("task_assignees")
+    .select("user_id")
+    .eq("task_id", taskId)
+
   const { error } = await supabase
     .from("tasks")
     .update(details)
@@ -149,6 +241,45 @@ export async function updateTaskDetails(taskId: string, details: any, podId: str
   if (error) {
     console.error("Error updating task details:", error)
     return { error: error.message }
+  }
+
+  // Notify assignees if due date changed or status changed
+  if (assignees && oldTask) {
+    const changes: string[] = []
+    
+    if (details.due_date && details.due_date !== oldTask.due_date) {
+      changes.push("due date")
+    }
+    if (details.status && details.status !== oldTask.status) {
+      changes.push("status")
+    }
+    if (details.priority && details.priority !== oldTask.priority) {
+      changes.push("priority")
+    }
+
+    if (changes.length > 0) {
+      for (const assignee of assignees) {
+        // Verify assignee is still assigned before notifying
+        const { data: stillAssigned } = await supabase
+          .from("task_assignees")
+          .select("id")
+          .eq("task_id", taskId)
+          .eq("user_id", assignee.user_id)
+          .maybeSingle()
+
+        if (stillAssigned) {
+          await createNotification(
+            assignee.user_id,
+            "SYSTEM",
+            "Task Updated",
+            `"${oldTask.title}" ${changes.join(" and ")} updated`,
+            `/pods/${podId}/projects/${projectId}`,
+            taskId,
+            "task"
+          )
+        }
+      }
+    }
   }
 
   revalidatePath(`/pods/${podId}/projects/${projectId}`)

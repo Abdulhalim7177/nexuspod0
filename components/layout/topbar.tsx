@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { usePathname } from "next/navigation";
 import { Bell, PanelLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,10 +65,7 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
                     </div>
                 </div>
 
-                <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full text-muted-foreground hover:text-foreground">
-                    <Bell className="h-4 w-4" />
-                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary border-2 border-background" />
-                </Button>
+                <NotificationBell />
 
                 <div className="h-5 w-px bg-border/60 mx-1" />
 

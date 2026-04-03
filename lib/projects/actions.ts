@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { redirect } from "next/navigation"
+import { createNotification } from "@/lib/notifications/actions"
 
 const projectSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -250,6 +251,46 @@ export async function manageJoinRequest(requestId: string, podId: string, projec
     if (memberError && memberError.code !== '23505') {
        console.error("Error adding member after approval:", memberError)
     }
+
+    // Get project info
+    const { data: project } = await supabase
+      .from("projects")
+      .select("title")
+      .eq("id", projectId)
+      .single()
+
+    // Notify user about approval
+    if (project) {
+      await createNotification(
+        request.user_id,
+        "PROJECT_INVITE",
+        "Project Request Approved",
+        `Your request to join "${project.title}" has been approved`,
+        `/pods/${podId}/projects/${projectId}`,
+        projectId,
+        "project"
+      )
+    }
+  } else if (status === 'REJECTED') {
+    // Get project info
+    const { data: project } = await supabase
+      .from("projects")
+      .select("title")
+      .eq("id", projectId)
+      .single()
+
+    // Notify user about rejection
+    if (project) {
+      await createNotification(
+        request.user_id,
+        "PROJECT_REQUEST",
+        "Project Request Rejected",
+        `Your request to join "${project.title}" was rejected`,
+        `/pods/${podId}/projects`,
+        projectId,
+        "project"
+      )
+    }
   }
 
   revalidatePath(`/pods/${podId}/projects/${projectId}`)
@@ -258,6 +299,13 @@ export async function manageJoinRequest(requestId: string, podId: string, projec
 
 export async function addProjectMember(podId: string, projectId: string, userId: string) {
   const supabase = await createClient()
+
+  // Get project info for notification
+  const { data: project } = await supabase
+    .from("projects")
+    .select("title")
+    .eq("id", projectId)
+    .single()
 
   const { error } = await supabase
     .from("project_members")
@@ -268,6 +316,19 @@ export async function addProjectMember(podId: string, projectId: string, userId:
 
   if (error) {
     return { error: "Failed to add member to project." }
+  }
+
+  // Notify the user they were added
+  if (project) {
+    await createNotification(
+      userId,
+      "PROJECT_INVITE",
+      "Added to Project",
+      `You have been added to project "${project.title}"`,
+      `/pods/${podId}/projects/${projectId}`,
+      projectId,
+      "project"
+    )
   }
 
   revalidatePath(`/pods/${podId}/projects/${projectId}`)

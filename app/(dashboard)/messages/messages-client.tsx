@@ -7,6 +7,8 @@ import {
   getConversations,
   getPodMembersForChat,
   getOrCreateDM,
+  getOrCreateProjectConversation,
+  getUserProjectConversations,
   type Conversation,
 } from "@/lib/chat/actions"
 import { createClient } from "@/lib/supabase/client"
@@ -20,7 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MessageSquare, Search, UserPlus, Loader2 } from "lucide-react"
+import { MessageSquare, Search, UserPlus, Loader2, Folder } from "lucide-react"
 
 interface MessagesClientProps {
   conversations: Conversation[]
@@ -43,6 +45,18 @@ interface PodMember {
   }
 }
 
+interface ProjectChat {
+  id: string
+  project_id: string
+  name: string | null
+  pod_id: string | null
+  project: {
+    id: string
+    title: string
+    pod_id: string
+  } | null
+}
+
 export function MessagesClient({
   conversations: initialConversations,
   currentUserId,
@@ -57,6 +71,8 @@ export function MessagesClient({
   const [podMembers, setPodMembers] = useState<PodMember[]>([])
   const [loadingMembers, setLoadingMembers] = useState(false)
   const [startingChat, setStartingChat] = useState<string | null>(null)
+  const [projectChats, setProjectChats] = useState<ProjectChat[]>([])
+  const [loadingProjects, setLoadingProjects] = useState(false)
   const supabase = createClient()
   const typingUsersRef = useRef<Record<string, string[]>>({})
 
@@ -65,6 +81,15 @@ export function MessagesClient({
     if (!result.error) {
       setConversations(result.conversations)
     }
+  }, [])
+
+  const loadProjectChats = useCallback(async () => {
+    setLoadingProjects(true)
+    const result = await getUserProjectConversations()
+    if (!result.error) {
+      setProjectChats(result.projects as ProjectChat[])
+    }
+    setLoadingProjects(false)
   }, [])
 
   const loadMembers = useCallback(async () => {
@@ -91,8 +116,9 @@ export function MessagesClient({
   useEffect(() => {
     if (newChatOpen && podIds.length > 0) {
       loadMembers()
+      loadProjectChats()
     }
-  }, [newChatOpen, podIds, loadMembers])
+  }, [newChatOpen, podIds, loadMembers, loadProjectChats])
 
   // Real-time subscription for new messages and typing indicators
   useEffect(() => {
@@ -181,6 +207,25 @@ export function MessagesClient({
     setStartingChat(null)
   }
 
+  const handleOpenProjectChat = async (projectChat: ProjectChat) => {
+    setStartingChat(projectChat.id)
+    const result = await getOrCreateProjectConversation(projectChat.project_id)
+    if (result.conversation) {
+      setNewChatOpen(false)
+      const refreshed = await getConversations()
+      if (!refreshed.error) {
+        setConversations(refreshed.conversations)
+        const newConvo = refreshed.conversations.find(
+          (c) => c.project_id === projectChat.project_id
+        )
+        if (newConvo) {
+          setActiveConversation(newConvo)
+        }
+      }
+    }
+    setStartingChat(null)
+  }
+
   const filteredMembers = podMembers.filter((m) =>
     m.user.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -239,25 +284,66 @@ export function MessagesClient({
 
       {/* New Chat Dialog */}
       <Dialog open={newChatOpen} onOpenChange={setNewChatOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>New Message</DialogTitle>
             <DialogDescription>
-              Select a pod member to start a conversation
+              Start a DM or open a project chat
             </DialogDescription>
           </DialogHeader>
+
+          {/* Project Chats Section */}
+          {!loadingProjects && projectChats.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Project Chats
+              </p>
+              <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                {projectChats.map((chat) => (
+                  <button
+                    key={chat.id}
+                    onClick={() => handleOpenProjectChat(chat)}
+                    disabled={startingChat === chat.id}
+                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors text-left"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 flex items-center justify-center">
+                      <Folder className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">
+                        {chat.project?.title || chat.name || "Project Chat"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Project Chat
+                      </p>
+                    </div>
+                    {startingChat === chat.id && (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {loadingProjects && projectChats.length === 0 && (
+            <div className="flex items-center justify-center py-4 mb-4">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading projects...</span>
+            </div>
+          )}
 
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search members..."
+              placeholder="Search members to DM..."
               className="pl-9 rounded-xl"
             />
           </div>
 
-          <div className="max-h-[400px] overflow-y-auto">
+          <div className="max-h-[200px] overflow-y-auto">
             {loadingMembers ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
