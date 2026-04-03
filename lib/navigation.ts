@@ -6,6 +6,7 @@ import {
     FolderKanban,
     Boxes,
     MessageCircle,
+    Mail,
     Lightbulb,
     UserCircle,
     Settings,
@@ -70,6 +71,7 @@ export const unifiedNavigationConfig: NavGroup[] = [
         label: "Collaboration",
         items: [
             { title: "Chat", href: "/pods/[podId]/chat", icon: MessageCircle },
+            { title: "Messages", href: "/messages", icon: Mail },
             { title: "Notes", href: "/pods/[podId]/notes", icon: FileText },
             { title: "Opportunities", href: "/pods/[podId]/opportunities", icon: Lightbulb },
         ],

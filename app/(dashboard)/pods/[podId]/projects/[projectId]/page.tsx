@@ -36,6 +36,7 @@ import { ProjectHistory } from "@/components/projects/project-history"
 import { ProjectInviteButton } from "@/components/projects/project-invite-button"
 import { ProjectRequestsList } from "@/components/projects/project-requests-list"
 import { ProjectMemberManager } from "@/components/projects/project-member-manager"
+import { ProjectChat } from "@/components/chat/project-chat"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -402,17 +403,14 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
             </TabsContent>
 
             <TabsContent value="chat" className="mt-0">
-              <div className="h-[600px] border border-dashed rounded-xl flex flex-col items-center justify-center bg-muted/10">
-                <div className="text-center p-8 border rounded-2xl bg-background shadow-xl border-primary/10 max-w-sm">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <MessageSquare className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-bold mb-2">Project Comm-Link</h3>
-                  <Button variant="outline" className="w-full font-bold uppercase tracking-widest text-[10px] mt-4">
-                    Initialize Channel
-                  </Button>
-                </div>
-              </div>
+              <ProjectChat
+                projectId={projectId}
+                currentUserId={user.id}
+                currentUserProfile={{
+                  full_name: podProfiles?.find(p => p.id === user.id)?.full_name || "",
+                  avatar_url: podProfiles?.find(p => p.id === user.id)?.avatar_url || null,
+                }}
+              />
             </TabsContent>
           </Tabs>
         </div>
