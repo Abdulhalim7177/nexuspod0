@@ -33,7 +33,7 @@ export default async function PodSettingsPage({ params }: PodSettingsProps) {
     redirect("/pods")
   }
 
-  const myMember = pod.pod_members?.find((m: any) => m.user_id === user.id)
+  const myMember = pod.pod_members?.find((m: { user_id: string }) => m.user_id === user.id)
 
   if (!myMember) {
     redirect("/pods")

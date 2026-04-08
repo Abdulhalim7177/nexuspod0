@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createTask } from "@/lib/tasks/actions"
-import { Loader2, Calendar } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 const formSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -34,10 +33,17 @@ const formSchema = z.object({
   assigneeId: z.string().optional().or(z.literal("")),
 })
 
+interface Member {
+  user_id: string
+  user: {
+    full_name: string | null
+  }
+}
+
 interface CreateTaskFormProps {
   projectId: string
   podId: string
-  members: any[]
+  members: Member[]
   onSuccess?: () => void
 }
 

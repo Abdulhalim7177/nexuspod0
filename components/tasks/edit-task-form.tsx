@@ -33,11 +33,18 @@ const formSchema = z.object({
   assigneeId: z.string().optional().or(z.literal("")),
 })
 
+interface Member {
+  user_id: string
+  user: {
+    full_name: string | null
+  }
+}
+
 interface EditTaskFormProps {
   taskId: string
   podId: string
   projectId: string
-  members: any[]
+  members: Member[]
   initialData: {
     title: string
     description: string | null

@@ -42,7 +42,7 @@ export default async function PodMembersPage({ params }: PodMembersProps) {
 
   console.log("Members page - members count:", members?.length)
 
-  const myMember = members?.find((m: any) => m.user_id === user.id)
+  const myMember = members?.find((m: { user_id: string }) => m.user_id === user.id)
   console.log("Members page - myMember:", myMember)
 
   if (!myMember) {

@@ -1,376 +1,782 @@
-Product Requirements Document (PRD): Nexus Pod
+## **Phase 1 — Pod Creation & Structure**
 
-1. Vision & Purpose
+**Status:** ✅ **COMPLETE** - All pod functionality implemented with full RLS policies
 
-Nexus Pod is a workspace and ecosystem platform designed to solve the isolation of African founders. It combines task/project management with a "Cross-Pod" Opportunity Engine, fostering collaboration, accountability, and ecosystem growth.
+**Pod Overview:**
+ A Pod is the main workspace. Each Pod contains:
 
-2. User Roles & Permissions
+* Projects
+* Tasks
+* Members
+* Chat
+* Files
 
-Founder/CEO: Root authority. Can manage Pod settings, promote Admins, and delete the Pod.
+**Pod Fields:**
 
-Pod Manager (Admin): Focuses on execution. Can manage projects and tasks but cannot delete the Pod or remove members.
+* Pod Title
+* Pod Summary
+* Pod profile picture (optional)
+* Pod Social Media links
+* Auto-generated Nexus Pod Number (NPN)
+   *Example: NP-00123*
 
-Team Lead: Manages specific teams within a Pod. Can assign roles to their team members.
+Each Pod is fully isolated:
 
-Member: The workforce. Can work on assigned tasks, comment, and chat.
+* Separate members
+* Separate tasks
+* Separate files
+* Separate chat
 
-3. Functional Requirements
+---
 
-3.1 Workspace (Pod) Management
+## **Phase 2 — User Roles & Permissions**
 
-Isolated environments for different startups/teams.
+**Status:** 🟡 **PARTIAL** - Roles implemented (FOUNDER, POD_MANAGER, TEAM_LEAD, MEMBER), Teams not yet built
 
-Automatic generation of Nexus Pod Number (NPN) (e.g., NP-00123).
+**Founder / CEO**
+ Full control. Can:
 
-Founder Dashboard for high-level oversight.
+* Create Pods
+* Create Projects
+* Create Tasks
+* Assign Tasks
+* Manage Members
+* View dashboards
+* Manage integrations
+* Promote Admins
 
-3.2 Project & Task System
+**Pod Manager**
+ Can:
 
-Projects: Containers for tasks. Can be Public (workspace-wide) or Private (invite-only).
+* Create projects
+* Edit/delete projects
+* Create tasks
+* Assign tasks
+* Edit tasks
+* View all tasks
 
-Tasks: Core units of work with Title, Description, Due Date, Assignee, and Priority.
+Cannot:
 
-Review Loop: Assignee marks as DONE -> Assigner APPROVES or CORRECTS (reopens task).
+* Delete pod
+* Change pod settings
+* Remove members
+* Change roles
+* Delete pod files
 
-Momentum Score: A productivity metric (0-100) based on task completion and activity.
+**Note:** Only Founder can promote or demote Pod Managers.
 
-3.3 Collaboration Tools
+**Teams & Team Lead**
+ A pod can have many teams (e.g., Marketing, Design, Customer Support).
 
-Project Chat: Dedicated room per project. Ability to convert chat messages into tasks.
+Each team has:
 
-DMs & Voice: 1-on-1 messaging and voice notes (24h auto-delete).
+* Team Lead (assigned by Pod Manager or CEO/Founder)
+* Team Members
 
-Opportunity Engine: Cross-pod tab for posting hiring needs, feedback requests, or collaboration offers.
+Teams are the smallest work units inside a pod. They enable focused task allocation, chats, and team meetings per team.
 
-3.4 Accountability
+**Connections:**
 
-Audit Logs: Immutable trail of "Who did what and when" (e.g., "Daniel deleted Project X").
+* Pod (branch)
+* Projects
+* Tasks created under projects (team-specific boards: pending → in progress → done)
+* Chat module (team chats, audio calls & meetings)
+* File sharing module (team-only files)
+* Dashboards (team progress view)
 
-Reminders: 72h before deadline, then every 6h via Push/Email.
+**Permissions:**
 
-4. Technical Stack
+* Team Leads → can assign roles to their team members.
+* CEO, Founder, Pod Managers, Team Leads → can assign roles
+* Pod Representative → oversight only
 
-Frontend: Next.js (App Router), Tailwind CSS, Lucide React (Icons).
+**Members**
+ Can:
 
-Backend/Database: Supabase (PostgreSQL, Auth, Storage, Realtime).
+* View projects
+* Work on assigned tasks
+* Comment on tasks
+* Upload files
+* Chat
 
-Deployment: Vercel.
+Cannot:
 
-5. Success Metrics
+* Manage pod structure
+* Create projects (can create tasks only under existing projects)
 
-Pod Momentum: Average score across the platform.
+But A member of one team can be a team lead of another team, a team lead can lead many teams and a member be members of many team.
 
-Cross-Pod Matches: Number of opportunities successfully closed.
+---
 
-Retention: Daily active users within specific Pods.
+## **Phase 3 — Pod Creation & Onboarding**
 
-Full System Description: Nexus Pod
+**Status:** ✅ **COMPLETE** - Code-based invitation system fully implemented
 
-1. The "Pod" Architecture
+**Pod Structure:**
 
-Nexus Pod is architected as a multi-tenant platform where each Pod acts as a virtual office. Data is strictly partitioned; a user in Pod A cannot see tasks in Pod B unless they are members of both.
+**Step 1 — Founder Creates Pod**
 
-2. Core Modules
+* Founder becomes Pod Manager and  team member and automatically a team lead.
+* Can assign a Pod manager and a team lead
 
-A. The Execution Engine (Tasks & Projects)
+**Step 2 — Members Join**
 
-Instead of a simple "In Progress/Done" status, Nexus Pod uses a Verification Loop. Work is only "Completed" when the Assigner approves the submission. This ensures quality and prevents "silent completion" of tasks.
+* Members join via invitation link
 
-B. The Social Core (Chat & Presence)
+---
 
-The system leverages Supabase Realtime to provide typing indicators, online status, and instant messaging. Project Chat is contextual, meaning discussions about a specific project stay within that project's view, reducing noise in the main Pod chat.
+## **Phase 4 — Project & Task System**
 
-C. The Ecosystem Layer (Opportunity Engine)
+**Status:** ✅ **COMPLETE** - Projects and tasks fully implemented with review loop
 
-This is the unique differentiator. Users can choose to broadcast "Opportunities" to the Nexus Network. This breaks the walls between isolated companies, allowing a developer in one Pod to find equity work in another.
+**Projects**
+ Projects are containers for tasks.
+ Fields:
 
-D. The Motivation Layer (Gamification)
+* Project Title
+* Description
+* Pod ID
+* Unlimited projects allowed
 
-The Momentum Score and Streaks turn productivity into a game. The score is calculated via a weighted algorithm (Tasks = 5pts, Comments = 1pt, etc.), encouraging constant engagement.
+**Public Project:**
 
-3. Data Flow
+* Everyone can see tasks.
+* Anyone can comment.
+* Members can assign tasks to themselves.
 
-Onboarding: Founder creates a Pod -> Supabase Auth generates a user -> Database creates a pods record.
+**Private Project:**
 
-Work: Tasks created in tasks table -> Subscribed to via Realtime for notifications.
+* Only selected members can see tasks.
+* Only selected members can comment.
+* Members can assign tasks only to themselves.
+* Founders/admins can assign tasks to any allowed member.
+* Pod manager cannot assign tasks to founder; founder can assign tasks to admins.
 
-Accountability: Any mutation (Update/Delete) triggers a record in the audit_logs table.
+# **Nexus Pod — Project Chat (Design & Behaviour)**
 
-Portfolio: User activity is aggregated into a "Mini-Website" view for their public profile.
+### **Purpose of Project Chat**
 
-System Design Document
+Project Chat exists to support collaboration at the project level, not task execution.
+ It is used for:
 
-1. High-Level Architecture
+* Project-wide discussions
+* Planning and coordination
+* Sharing context before tasks are created
+* Cross-functional updates
 
-Framework: Next.js (SSR for SEO/Dashboards, CSR for Chat/Realtime).
+**Tasks handle execution. Project Chat handles conversation.**
 
-State Management: React Context/Query for global state; Supabase Realtime for live updates.
+Members can only create tasks under Projects created by Founders, managers or team leads.
 
-Auth: Supabase Auth (Email/Password + Social).
+So only Founders, managers or team leads can create projects, so everyone and anyone can create tasks under already created projects.
 
-Database: PostgreSQL (Supabase).
+---
 
-Storage: Supabase Storage (Task attachments, compressed for mobile).
+### **Where Project Chat Lives**
 
-2. Database Schema (Simplified)
+Every Project automatically has:
 
-pods
+* A dedicated Project Chat Room
 
-Field
+Project Chat is:
 
-Type
+* Separate from **Pod Main Chat**
+* Separate from **Task Comments**
+* Accessed from inside the Project view
 
+---
+
+### **Visibility & Access Rules**
+
+**Who Can See Project Chat?**
+
+* All members added to the Project
+* Even if a member has no tasks assigned, they can still:
+  * Read Project Chat
+  * Participate in discussions
+  * Add and access **files**
+* This ensures:
+  * Transparency
+  * Shared context
+  * No information silos
+
+---
+
+### **Relationship Between Project Chat & Tasks**
+
+**What Project Chat Is Used For:**
+
+* Discussing direction, scope, dependencies, priorities
+* Clarifying responsibilities and timelines
+* Sharing files, links, ideas, and decisions
+
+**What Project Chat Is Not Used For:**
+
+* Task progress tracking
+* Task completion updates
+* Detailed execution discussion (these live in **Task Comments**)
+
+### **Task Creation from Project Chat**
+
+**Create Task from Chat**
+
+* Users can convert a message into a task or create a task directly from Project Chat
+
+**Flow:**
+
+1. Message is selected
+2. "Create Task" action is clicked
+3. Task opens with:
+   * Message content as task description
+   * Linked back to the Project Chat message
+
+**Benefits:**
+
+* Preserves context
+* Eliminates copy-paste chaos
+
+### **Linking Tasks Inside Project Chat**
+
+**Referencing Tasks**
+
+* Users can type `@task` → search and link a task
+* Linked tasks appear clickable
+* Example:
+
+   "@task Homepage UI needs review before Friday
+
+**Task System (Core Feature)**
+ Tasks exist inside projects.
+
+**Task Fields:**
+
+* Required: Title, Description, Due Date, Assignee(s), Priority
+* Optional: Files, Link
+
+**Task Status:**
+
+* Not Started
+* Ongoing
+* Completed
+
+**Status Rules:**
+
+* Founder/Manager → update any task
+* Assignee → update only their tasks
+
+**Task Comments:**
+ Fields: Text, Files (optional), Links (optional), User, Timestamp
+
+**Rules:**
+
+* Files & links require explanation
+* Only commenter and founder/manager can delete comments
+
+---
+
+## **Phase 5 — Task Completion, Review & Approval**
+
+**Status:** ✅ **COMPLETE** - Full task lifecycle with submissions and reviews implemented
+
+Nexus Pod introduces a **two-way execution and feedback loop** that replaces unclear "done" statuses.
+
+### **Task Lifecycle**
+
+1. **Task Assigned**
+2. Assignee works on the task
+3. Assignee clicks **DONE** (although both assigner and assignee receive alert notification.
+
+### **REVERT Action**
+
+* After clicking **DONE**, a **REVERT** button becomes available.
+* REVERT allows the assignee to submit:
+  1. Description of work done
+  2. Link (optional)
+  3. File upload (optional: documents, images, videos, screenshots)
+
+### **Review by Assigner**
+
+* The assigner receives a notification.
+* The assigner can:
+  * **APPROVE** the task → task is completed
+  * **CORRECT** the task → task is returned for revision
+
+### **Correction Flow**
+
+When correcting a task, the assigner can add:
+
+1. Description
+2. Comments
+3. Links
+4. File uploads
+5. Descriptive feedback
+* Once corrected, the task automatically returns to **INCOMPLETED/PROGRESS** (while in **PROGRESS**, assignee and assigner still receive alert)
+* The assignee revises the work.
+* The assignee clicks **DONE** again.
+* The cycle repeats until **APPROVED**.
+
+**Notifications:**
+
+* Alerts: "Task needs review" after DONE
+
+---
+
+## **Phase 6 — Deadline & Personal Dashboards**
+
+**Status:** 🟡 **PARTIAL** - "My Tasks" dashboard implemented, deadline reminder cron pending
+
+**Deadline Reminder System:**
+
+* First alert: 72 hours before deadline
+* Then: Every 6 hours until deadline
+* Sent to: Assignee & Founder
+* Channels: Email, Push notification
+* Completed tasks → reminders cancelled
+
+**My Tasks Dashboard:**
+
+* Shows tasks assigned to user, due dates, status, priority
+
+**Member Dashboard:**
+
+* Auto-filters tasks assigned to them
+* Shows accessible projects, pod files, group files
+* Shows all members, tasks, public/private projects (only the private project they are part of)
+* Chat access
+
+---
+
+## **Phase 7 — File Sharing, Chat & Notifications**
+
+**Status:** ✅ **COMPLETE** - Chat, files, voice notes, notifications all implemented (voice/video calls future)
+
+**File Sharing:**
+
+* Upload in tasks & chat
+* Compressed for mobile access
+* Original stored in cloud
+* Storage depends on Pod tier
+
+**Chat System:**
+
+* Unlimited text chat
+* Voice recording (auto-delete 24h)
+* File sharing, audio calling
+* Online status, typing indicator, read receipts
+* Tagging (@) and pinning messages
+* Future: Google Meet integration
+* People can 1 on 1 DM.
+
+**Notifications:**
+ Triggered by:
+
+* Task assigned
+* Task comment added
+* Task reminder triggered
+* Task submitted for review
+
+---
+
+## **Phase 8 — Dashboards & Founder View**
+
+**Status:** 🟡 **PARTIAL** - Basic dashboards implemented, advanced founder view pending
+
+**Founder Dashboard:**
+
+* All pods, projects, tasks, members & invites
+* File usage, pod stats, all files, chat
+
+**Project Structure Improvements:**
+
+* Milestones & progress tracking
+* Visual progress representation
+* Dedicated project chat with audio call
+* Task creation & linking from chat
+* Project privacy: Public vs Private
+
+---
+
+## **Phase 9 — Accountability & Collaboration Layers**
+
+**Status:** 🟡 **PARTIAL** - Audit logs complete, Opportunities engine pending
+
+## **What Is An Audit Log?**
+
+An audit log is a recorded history of important actions taken inside a Pod.
+
+It answers three simple questions:
+
+• What happened?
+ • Who did it?
+ • When did it happen?
+
+That's it.
+
+It is not a chat. It is not a notification feed. It is an accountability trail.
+
+---
+
+### 2️⃣ **Why Audit Logs Are Extremely Important**
+
+In many startup teams (especially early-stage African teams):
+
+• Tasks disappear
+ • Projects get edited silently
+ • Deadlines change without clarity
+ • Nobody remembers who made the change
+
+This creates:
+
+Confusion
+ Blame
+ Trust erosion
+
+Audit logs remove ambiguity.
+
+Instead of: "Who deleted this?"
+
+You see: "Project deleted by Daniel — Feb 28, 3:45pm."
+
+No arguments. Just facts.
+
+**Groups:**
+
+* Private/Public discussion rooms
+* Features: Chat, file sharing, audio calls
+* Admin can add members, delete messages, assign admins
+
+**Pod Notes:**
+
+* Individual note & Pod-level notes
+* Use: meeting notes, strategy docs, marketing plans, founder thoughts
+
+# **Opportunity Engine (The Killer Nexus Pod Feature)**
+
+Most project tools only manage **tasks**.
+
+They don't help founders find:
+
+* collaborators
+* feedback
+* opportunities
+* visibility
+
+But your entire **Nexus Founders Circle idea** is about solving **isolation**.
+
+So the feature becomes:
+
+**Pods helping Pods.**
+
+---
+
+# **🔥 The Feature: Cross-Pod Opportunities**
+
+Inside Nexus Pod there will be a tab:
+
+Opportunities
+
+Users can post things like:
+
+### **Example Posts**
+
+**Looking for Dev**
+
+Startup: AgroChain
+Need: React Developer
+Type: Equity / Paid
+Deadline: 5 days
+
+---
+
+**Looking for Feedback**
+
+Startup: PayFlow
+Need: UI feedback on our landing page
+Time needed: 10 minutes
+Reward: Visibility
+
+---
+
+**Looking for Collaboration**
+
+Startup: LearnStack
+Need: Content creator for launch
+Offer: Revenue share
+
+---
+
+# **🌍 Why this is powerful**
+
+African builders struggle with:
+
+* isolation
+* lack of visibility
+* no support system
+
+Jira solves **task management**.
+
+Nexus Pod would solve **ecosystem building**.
+
+---
+
+# **🧠 How it works technically**
+
+Very simple to build.
+
+### **New database table**
+
+Opportunities
+
+Fields:
+
+Title
 Description
+Pod ID
+Founder ID
+Opportunity Type
+Deadline
+Created At
 
-id
+Types:
 
-uuid (PK)
+Collaboration
+Feedback
+Hiring
+Funding
+Exposure
 
-Unique ID
+---
 
-npn
+### **Visibility**
 
-string
+Each Pod can choose:
 
-Generated NP-XXXXX
+Visibility
 
-title
+☑ Private (only pod members)
+☑ Nexus Network
 
-string
+If **Nexus Network** is selected → visible across Nexus Pods.
 
-Name of the Pod
+**Builder Profiles:**
 
-founder_id
+* Show skills, pods joined, projects, contributions
 
-uuid (FK)
+---
 
-References profiles.id
+## **Phase 10 — Momentum System**
 
-projects
+**Status:** ⬜ **NOT STARTED** - Only placeholder UI in navigation
 
-Field
+### 🔥 **Momentum Tracking (Signature Nexus Pod Feature)**
 
-Type
+Every Pod has a **Momentum Score**.
 
-Description
+This score shows how active and productive the team has been recently.
 
-id
+It updates automatically based on activity.
 
-uuid (PK)
+Example dashboard:
 
-Unique ID
+POD MOMENTUM: 78%
 
-pod_id
+Tasks Completed (7 days): 12
+Active Members: 4
+Projects Progressing: 3
+Deadlines Hit: 5
 
-uuid (FK)
+Founders instantly see if the team is **moving forward or slowing down**.
 
-References pods.id
+---
 
-is_private
+### 🧠 **How the Momentum Score Works**
 
-boolean
+The score can be calculated from simple signals.
 
-Visibility flag
+### **Example Formula**
 
-tasks
+Momentum Score \=
+(Tasks Completed × 5\)
+\+ (Tasks Created × 2\)
+\+ (Comments Posted × 1\)
+\+ (Files Uploaded × 2\)
+\+ (Members Active × 3\)
 
-Field
+Then normalize to **0–100**.
 
-Type
+This turns productivity into a **visible metric**.
 
-Description
+---
 
-id
+### 📊 **Momentum Dashboard**
 
-uuid (PK)
+Founder view  show:
 
-Unique ID
+Your Pods
 
-project_id
+AgroChain
+Momentum: 82%
+Last Activity: 3 hours ago
 
-uuid (FK)
+LearnStack
+Momentum: 46%
+Last Activity: 2 days ago
+⚠ Momentum Dropping
 
-References projects.id
+This creates **psychological pressure to keep building**.
 
-assigner_id
+People naturally want their score to go up.
 
-uuid (FK)
+---
 
-Who created/assigned it
+### **🏆 Pod Streaks (Gamification)**
 
-status
+Add streak tracking.
 
-enum
+Example:
 
-NOT_STARTED, ONGOING, DONE, APPROVED
+Build Streak: 12 days
 
-momentum_value
+If a team completes at least **1 task per day**, the streak continues.
 
-int
+Lose activity → streak resets.
 
-Points for completion
+People hate losing streaks, so they stay active.
 
-audit_logs
+### **🌍 Nexus Global Leaderboard**
 
-Field
+Across all pods:
 
-Type
+Top Builder Pods This Week
 
-Description
+1\. AgroChain — Momentum 94%
+2\. LearnStack — Momentum 88%
+3\. PayFlow — Momentum 81%
 
-id
+This gives:
 
-uuid (PK)
+* visibility
+* competition
+* recognition
 
-Unique ID
+Perfect for your **Nexus Founders ecosystem**.
 
-user_id
+---
 
-uuid (FK)
+### **🚀 Weekly Build Report (Automatic)**
 
-Actor
+Every Monday Nexus Pod can send founders a report.
 
-action
+Example:
 
-string
+Your Weekly Build Report
 
-e.g., "DELETE_PROJECT"
+Tasks Completed: 14
+Tasks Created: 9
+Deadlines Hit: 6
+Momentum Change: \+18%
 
-target_id
+Your team is moving faster than 72% of pods.
 
-uuid
+This makes the product feel **intelligent and alive**
 
-ID of the object changed
+---
 
-3. Security (Row Level Security - RLS)
+## **Phase 11 — Mini Website & GitHub Integration**
 
-Pod Isolation: CREATE POLICY "User can see Pod data if they are members" ON tasks USING (pod_id IN (SELECT pod_id FROM members WHERE user_id = auth.uid()));
+**Status:** ⬜ **NOT STARTED**
 
-Admin Rights: Only profiles.role == 'Founder' can delete projects or promote admins.
+**Mini Website:**
 
-4. Edge Functions
+* Auto-generated portfolio for each user
+* Sections: Header, About, Services, Portfolio, projects
+* Example, [www.abdullah/5Point1Nexus.com](http://www.abdullah/5Point1Nexus.com)
+* Manual project upload initially; later GitHub integration
 
-NPN Generator: A database trigger or Edge Function to increment and format the Nexus Pod Number.
+**GitHub Integration:**
 
-Deadline Check: A Cron job (Supabase pg_cron) that runs every hour to send reminders for tasks due in < 72 hours.
+* Connect GitHub, display repos, sync project activity
 
+---
 
-Implementation Plan
+## **Phase 12 — Lightweight CRM & Multi-Founder Governance**
 
-1. Development Environment Setup
+**Status:** ⬜ **NOT STARTED**
 
-Repository: GitHub (Monorepo/Standard Next.js).
+**CRM Modules:**
 
-Supabase: Local development using Supabase CLI for migrations.
+* Contacts, Deals, Activity Notes
+* Track relationships and deals pipeline
 
-Linting/Formatting: ESLint + Prettier.
+**Multi-Founder Governance:**
 
-2. Core Development Strategy
+* Multiple founders share authority
+* Original founder cannot be removed
+* And no founder can remove other founder
+* Founders can delete their own account
+* But the pod creator remain the original founder
+* Founders can invite new founders
 
-Atomic Design: Build UI components (Buttons, Inputs, Modals) first.
+---
 
-Database First: Finalize migrations before building complex UI logic.
+## **Phase 13 — Smart Calendar & Operations Hub**
 
-Mobile-First: Use Tailwind responsive classes (sm:, md:) as task management is often done on the go.
+**Status:** ⬜ **NOT STARTED**
 
-3. Testing Strategy
+**Smart Calendar & Reminder System:**
 
-Unit Testing: Vitest for utility functions (Momentum Score calculations).
+* Centralized pod calendar \+ personal calendar per member
+* Tracks tasks, meetings, events, deadlines
 
-E2E Testing: Playwright for critical flows (Login -> Create Pod -> Create Task -> Approve).
+**Operations & Documentation Hub (Company OS):**
 
-Manual QA: Testing the "Correction Flow" between two different user accounts.
+* Wiki-like documentation area
+* Stores SOPs, operating docs, onboarding, workflows, project docs, meeting notes, recurring processes
 
-4. Deployment Pipeline
+---
 
-Staging: preview branches on Vercel linked to a Supabase Staging project.
+## **Phase 14 — Teams & Meeting/Event Management**
 
-Production: main branch linked to the Production project.
+**Status:** ⬜ **NOT STARTED**
 
-CI/CD: GitHub Actions to run tests on every Pull Request.
+* Teams can schedule or start instant meetings (audio call)
 
-Implementation Roadmap (Nexus Pod)
+**Meetings** →
+We'll start with **Google meet** integration.
+Then in phase 3, we'll build ours.
 
-This roadmap is divided into Phased Increments. Each increment includes a build and a test phase.
+* **Team Meetings** → for team discussions
+* **Group Meetings** → for group discussions
 
-Phase 1: The Foundation (Core Auth & Pods)
+* **Pod Meetings** → for across the whole Pod
 
-Sprint 1: Multi-tenant Setup
+**Event**
 
-Increment 1.1: Setup Next.js + Supabase. Configure Auth (Login/Signup).
+* You create an event and it'll be across all the pods in the ecosystem and any one can attend.
+* Also, you can record an event your business need to attend and you'll get a notification, maybe you need to attend a Google meet, you can register it.
+* Notifications for upcoming events: 7 days prior, every 12 hours via push/email
 
-Increment 1.2: Implement "Create Pod" flow. Generate NPN (NP-00001).
 
-Test: Can a user sign up and create a unique Pod?
+---
 
-Sprint 2: Member Management
+## **Phase 15 — Member Profiles**
 
-Increment 1.3: Invitation link system (Email or UUID-based link).
+**Status:** 🟡 **PARTIAL** - Basic profile fields implemented, advanced features pending
 
-Increment 1.4: Role assignment (Founder, Admin, Member).
+**Basic Information:**
 
-Test: Can a founder invite a member and assign them the "Pod Manager" role?
+* Full name, profile picture, bio
 
-Phase 2: Execution Engine (Projects & Tasks)
+**Skills & Expertise:**
 
-Sprint 3: Project Structure
+* Input or write
 
-Increment 2.1: Project creation (Public vs Private).
+**Social Links:**
 
-Increment 2.2: Project view with member filtering (RLS checks).
+* Twitter, LinkedIn, Instagram, TikTok, etc
 
-Test: Can a member see a Public project but NOT a Private one they aren't invited to?
+**Interests:**
 
-Sprint 4: The Task Cycle & Review Loop
+* What they like
 
-Increment 2.3: Kanban/List board for tasks.
-
-Increment 2.4: Implement "REVERT" and "CORRECT" logic.
-
-Test: If an assignee clicks DONE, does the Assigner get a notification to APPROVE?
-
-Phase 3: Collaboration & Social
-
-Sprint 5: Realtime Project Chat
-
-Increment 3.1: Supabase Realtime chat rooms per project.
-
-Increment 3.2: "Convert Message to Task" feature.
-
-Test: Clicking a message options menu -> "Create Task" -> Auto-fills task description.
-
-Sprint 4: Voice & Notifications
-
-Increment 4.1: Voice note recording (24h TTL logic).
-
-Increment 4.2: Deadline reminder system (pg_cron).
-
-Test: Does the system send an alert 72 hours before a task is due?
-
-Phase 4: The Ecosystem (Opportunity Engine & Stats)
-
-Sprint 6: Cross-Pod Opportunities
-
-Increment 5.1: Opportunities Tab (Nexus Network visibility toggle).
-
-Increment 5.2: Audit Log implementation (History of actions).
-
-Test: If I post a "Hiring" opportunity in Pod A, can a user in Pod B see it?
-
-Sprint 7: Gamification (Momentum)
-
-Increment 6.1: Calculate Momentum Score algorithm.
-
-Increment 6.2: Founder Dashboard with global leaderboards.
-
-Test: Does completing a task increase the Pod's Momentum Score instantly?
-
-Phase 5: Polish & Public Presence
-
-Sprint 8: Mini-Websites & CRM
-
-Increment 7.1: Public Portfolio page (Next.js dynamic routes /[username]).
-
-Increment 7.2: GitHub Sync (fetch repos via API).
-
-Test: Does the profile page show the correct "Contributions" from the task system?
+**URL/Website**

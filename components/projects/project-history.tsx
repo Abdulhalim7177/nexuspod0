@@ -7,7 +7,6 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { 
@@ -25,8 +24,8 @@ interface AuditLog {
   action: string
   entity_type: string
   entity_id: string | null
-  old_values: Record<string, any> | null
-  new_values: Record<string, any> | null
+  old_values: Record<string, unknown> | null
+  new_values: Record<string, unknown> | null
   created_at: string
   user: {
     full_name: string

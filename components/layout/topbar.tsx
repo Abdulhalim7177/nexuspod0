@@ -3,7 +3,7 @@
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { usePathname } from "next/navigation";
-import { Bell, PanelLeft, Search } from "lucide-react";
+import { PanelLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const routeTitles: Record<string, string> = {

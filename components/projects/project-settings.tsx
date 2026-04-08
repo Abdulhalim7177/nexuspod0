@@ -27,8 +27,6 @@ import { Switch } from "@/components/ui/switch"
 import { 
   UserPlus, 
   Trash2, 
-  Crown, 
-  ShieldCheck, 
   Lock, 
   Globe,
   Loader2,
@@ -36,7 +34,6 @@ import {
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { updateProject, deleteProject, addProjectMember, removeProjectMember } from "@/lib/projects/actions"
-import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -51,10 +48,33 @@ const projectSchema = z.object({
   is_private: z.boolean(),
 })
 
+interface ProjectMember {
+  user: {
+    id: string
+    full_name: string
+    username: string
+    avatar_url: string
+  }
+}
+
+interface PodMember {
+  user_id: string
+  user: {
+    full_name: string
+    username: string
+  }
+}
+
 interface ProjectSettingsProps {
-  project: any
+  project: {
+    id: string
+    title: string
+    description: string | null
+    is_private: boolean
+    members?: ProjectMember[]
+  }
   podId: string
-  podMembers: any[]
+  podMembers: PodMember[]
 }
 
 export function ProjectSettings({ project, podId, podMembers }: ProjectSettingsProps) {
@@ -186,7 +206,7 @@ export function ProjectSettings({ project, podId, podMembers }: ProjectSettingsP
               </SelectTrigger>
               <SelectContent>
                 {podMembers
-                  .filter(pm => !project.members?.some((m: any) => m.user.id === pm.user_id))
+                  .filter(pm => !project.members?.some((m: ProjectMember) => m.user.id === pm.user_id))
                   .map(pm => (
                     <SelectItem key={pm.user_id} value={pm.user_id}>
                       {pm.user.full_name} (@{pm.user.username})
@@ -200,7 +220,7 @@ export function ProjectSettings({ project, podId, podMembers }: ProjectSettingsP
           </div>
 
           <div className="space-y-3">
-            {project.members?.map((member: any) => (
+            {project.members?.map((member: ProjectMember) => (
               <div key={member.user.id} className="flex items-center justify-between p-3 rounded-xl border border-primary/5 bg-background/50 hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-9 w-9 border-2 border-primary/10 shadow-sm">

@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import {
   Search,
   Plus,
-  Hash,
   Lock,
   MessageCircle,
   Users,
@@ -23,7 +22,6 @@ interface ChatSidebarProps {
   onSelectConversation: (conversation: Conversation) => void
   onCreateConversation?: () => void
   className?: string
-  getTypingUsers?: (convoId: string) => string[]
 }
 
 export function ChatSidebar({
@@ -32,7 +30,6 @@ export function ChatSidebar({
   onSelectConversation,
   onCreateConversation,
   className,
-  getTypingUsers,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
 

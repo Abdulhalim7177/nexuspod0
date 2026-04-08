@@ -6,8 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Check, X, Loader2 } from "lucide-react"
 import { manageJoinRequest } from "@/lib/projects/actions"
 
+interface ProjectRequest {
+  id: string
+  user: {
+    id: string
+    full_name: string
+    avatar_url: string | null
+    username: string
+  }
+}
+
 interface ProjectRequestsListProps {
-  requests: any[]
+  requests: ProjectRequest[]
   podId: string
   projectId: string
 }

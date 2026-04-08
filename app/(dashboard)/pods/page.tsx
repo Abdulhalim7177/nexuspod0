@@ -82,8 +82,8 @@ async function PodsContent() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {pods.map((pod: any) => {
-            const myMember = pod.pod_members?.find((m: any) => m.user_id === user.id)
+          {pods.map((pod: { id: string, title: string, npn: string, avatar_url?: string | null, pod_members?: { user_id: string }[] }) => {
+            const myMember = pod.pod_members?.find((m: { user_id: string }) => m.user_id === user.id)
             const memberCount = pod.pod_members?.length || 0
             
             return (

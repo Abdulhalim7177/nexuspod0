@@ -55,7 +55,7 @@ export function ProjectInviteButton({ podId, projectId, projectTitle }: ProjectI
         <DialogHeader>
           <DialogTitle>Invite to {projectTitle}</DialogTitle>
           <DialogDescription>
-            Generate a link to invite members to this project. They will automatically join the pod if they aren't members.
+            Generate a link to invite members to this project. They will automatically join the pod if they aren&apos;t members.
           </DialogDescription>
         </DialogHeader>
         

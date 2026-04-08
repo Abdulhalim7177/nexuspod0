@@ -1,6 +1,6 @@
 # Nexus Pod — Development Progress Tracker
 
-> **Last Updated:** 3 April 2026
+> **Last Updated:** 8 April 2026
 > **Status:** 🟢 Phase 1-3 Complete — Phase 4 Next
 
 ---
@@ -45,6 +45,7 @@
 | 2.7 | Invitation system (generate + join) | ✅ | Code-based join flow |
 | 2.8 | Role management UI | ✅ | FOUNDER, POD_MANAGER, TEAM_LEAD, MEMBER |
 | 2.9 | Pod settings page | ✅ | `/pods/[podId]/settings` |
+| 2.10 | Pod member management page | ✅ | `/pods/[podId]/members` |
 
 ---
 
@@ -56,7 +57,7 @@
 
 | # | Increment | Status | Notes |
 |---|-----------|--------|-------|
-| 3.1 | Create `projects` + `project_members` tables | ✅ | Migrations `005`, `006` |
+| 3.1 | Create `projects` + `project_members` tables | ✅ | Migrations `006`, `011` |
 | 3.2 | Project creation form | ✅ | Title, description, visibility toggle |
 | 3.3 | Project list page | ✅ | `/pods/[podId]/projects` |
 | 3.4 | Project detail page | ✅ | Tabbed: Board, Team, Brief, History, Settings, Chat |
@@ -65,23 +66,26 @@
 | 3.7 | Project member management | ✅ | Add/remove members, role assignment |
 | 3.8 | Project Brief tab | ✅ | Stats, progress bar, task counts, details grid |
 | 3.9 | Public project access for pod members | ✅ | Pod members can view public projects directly |
+| 3.10 | Project history/audit tab | ✅ | History tab with filters |
+| 3.11 | Project invite buttons | ✅ | Project invitation flow |
+| 3.12 | Project join request management | ✅ | Request to join private projects |
 
 ### Sprint 4: Task System & Review Loop (Week 7–8)
 
 | # | Increment | Status | Notes |
 |---|-----------|--------|-------|
 | 4.1 | Create `tasks` + `task_assignees` tables | ✅ | Migrations `007`, `017` |
-| 4.2 | Create `task_comments` table | ✅ | Migration for comments |
-| 4.3 | Create `task_submissions` + `task_reviews` tables | ✅ | Review lifecycle tables |
-| 4.4 | Task board UI (Kanban) | ✅ | Status-based columns |
-| 4.5 | Task creation form | ✅ | Title, description, priority, due date, assignees |
-| 4.6 | Task detail page | ✅ | Dialog + Sheet components |
-| 4.7 | DONE / SUBMIT flow | ✅ | Evidence submission with notes |
-| 4.8 | APPROVE / CORRECT flow | ✅ | Reviewer panel with feedback |
-| 4.9 | "My Tasks" cross-pod page | ✅ | `/tasks` |
-| 4.10 | Sub-tasks | ✅ | Real-time add/toggle/remove with local state |
-| 4.11 | Task counter in sidebar | ✅ | Live badge on "My Tasks" nav item |
-| 4.12 | Audit logs for tasks | ✅ | Auto-logged on create/status change |
+| 4.2 | Create `task_submissions` + `task_reviews` tables | ✅ | Review lifecycle tables |
+| 4.3 | Task board UI (Kanban) | ✅ | Status-based columns |
+| 4.4 | Task creation form | ✅ | Title, description, priority, due date, assignees |
+| 4.5 | Task detail page | ✅ | Dialog + Sheet components |
+| 4.6 | DONE / SUBMIT flow | ✅ | Evidence submission with notes |
+| 4.7 | APPROVE / CORRECT flow | ✅ | Reviewer panel with feedback |
+| 4.8 | "My Tasks" cross-pod page | ✅ | `/tasks` |
+| 4.9 | Sub-tasks | ✅ | Real-time add/toggle/remove with local state |
+| 4.10 | Task counter in sidebar | ✅ | Live badge on "My Tasks" nav item |
+| 4.11 | Audit logs for tasks | ✅ | Auto-logged on create/status change |
+| 4.12 | Task edit forms | ✅ | Edit task details and sub-tasks |
 
 ---
 
@@ -95,46 +99,50 @@
 |---|-----------|--------|-------|
 | 5.1 | Create chat tables (conversations, participants, messages) | ✅ | Migration `019` - RLS fixed |
 | 5.2 | Chat room component | ✅ | Components in `components/chat/` |
-| 5.3 | Message input (text, file, voice) | ✅ | chat-input.tsx exists |
-| 5.4 | Pod main chat | ✅ | `/pods/[podId]/chat` page exists |
-| 5.5 | Project chat | ✅ | Project chat component exists |
+| 5.3 | Message input (text, file, voice) | ✅ | chat-input.tsx |
+| 5.4 | Pod main chat | ✅ | `/pods/[podId]/chat` |
+| 5.5 | Project chat | ✅ | Project chat component in project detail |
 | 5.6 | Realtime subscriptions | ✅ | Full implementation in chat-container.tsx |
 | 5.7 | Typing indicators + online status | ✅ | Presence API in chat-container.tsx |
 | 5.8 | 1-on-1 DMs | ✅ | `/messages` page + get_or_create_dm fn |
-| 5.9 | Message → Task conversion | ⬜ | Not implemented |
+| 5.9 | Chat sidebar | ✅ | Conversation list sidebar |
+| 5.10 | Message bubbles | ✅ | Individual message display with actions |
+| 5.11 | @mention support | ✅ | Already in chat |
+| 5.12 | Read receipts | ✅ | Already in chat |
+| 5.13 | Message pinning | ✅ | Already in chat |
+| 5.14 | Message → Task conversion | ⬜ | Not implemented |
 
 ### Sprint 6: Files, Voice, Video & Notifications (Week 11–12)
 
 | # | Increment | Status | Notes |
 |---|-----------|--------|-------|
-| 6.1 | Set up Supabase Storage buckets | ✅ | Migration 020 - 5 buckets |
+| 6.1 | Set up Supabase Storage buckets | ✅ | Migration 020 - 5 buckets (task-files, project-files, pod-files, voice-notes, profile-avatars) |
 | 6.2 | File upload component | ✅ | components/shared/file-upload.tsx |
-| 6.3 | Create `files` table | ✅ | Migration 020 |
-| 6.4 | Voice note recording | ✅ | components/shared/voice-recorder.tsx |
-| 6.5 | Voice call | ⬜ | WebRTC (future) |
-| 6.6 | Video call | ⬜ | WebRTC (future) |
-| 6.7 | Create `notifications` table | ✅ | Migration 021 |
-| 6.8 | Notification bell + dropdown | ✅ | components/notifications/notification-bell.tsx |
-| 6.9 | Realtime notifications | ✅ | In notification-bell.tsx |
-| 6.10 | Deadline reminder cron | ⬜ | pg_cron |
-| 6.11 | @mention, read receipts, pinning | ✅ | Already in chat |
+| 6.3 | Voice note recording | ✅ | components/shared/voice-recorder.tsx |
+| 6.4 | Create `notifications` table | ✅ | Migration 021 |
+| 6.5 | Notification bell + dropdown | ✅ | components/notifications/notification-bell.tsx |
+| 6.6 | Realtime notifications | ✅ | In notification-bell.tsx |
+| 6.7 | Email notifications | ✅ | lib/email.ts with branded HTML templates |
+| 6.8 | Deadline reminder cron | ⬜ | pg_cron |
+| 6.9 | Voice call | ⬜ | WebRTC (future) |
+| 6.10 | Video call | ⬜ | WebRTC (future) |
 
 ---
 
 ## Phase 4: Ecosystem (Opportunities, Audit, Teams)
 
-**Status:** 🟡 Partial — Audit Logs done, Opportunity UI pending
+**Status:** 🟡 ~30% Complete — Audit Logs done, Opportunity UI pending
 
 ### Sprint 7: Opportunity Engine & Audit Logs (Week 13–14)
 
 | # | Increment | Status | Notes |
 |---|-----------|--------|-------|
-| 7.1 | Create `opportunities` table | ⬜ | Cross-pod RLS |
-| 7.2 | Opportunities page + form | ⬜ | `/opportunities` |
-| 7.3 | Cross-pod visibility (Nexus Network) | ⬜ | RLS policies |
-| 7.4 | Create `audit_logs` table (append-only) | ✅ | Immutable trail via RLS |
-| 7.5 | Audit log triggers | 🟡 | Manual logging in server actions |
-| 7.6 | Audit log viewer | ✅ | History tab with filters |
+| 7.1 | Create `audit_logs` table (append-only) | ✅ | Immutable trail via RLS |
+| 7.2 | Audit log triggers | ✅ | Auto-logged in server actions |
+| 7.3 | Audit log viewer | ✅ | History tab with filters |
+| 7.4 | Create `opportunities` table | ⬜ | Cross-pod RLS |
+| 7.5 | Opportunities page + form | ⬜ | `/opportunities` |
+| 7.6 | Cross-pod visibility (Nexus Network) | ⬜ | RLS policies |
 
 ### Sprint 8: Team Management (Week 15–16)
 
@@ -150,7 +158,7 @@
 
 ## Phase 5: Gamification (Momentum, Streaks, Leaderboard)
 
-**Status:** 🟡 Partial (UI placeholder exists)
+**Status:** 🟡 ~5% Complete (UI placeholder exists)
 
 ### Sprint 9: Momentum System (Week 17–18)
 
@@ -219,7 +227,7 @@
 | Opportunities | 4 | ⬜ Not Started | [README](./modules/opportunities.md) |
 | Audit Logs | 4 | ✅ Complete | [README](./modules/audit-logs.md) |
 | Teams | 4 | ⬜ Not Started | [README](./modules/teams.md) |
-| Momentum & Gamification | 5 | 🟡 Partial (UI placeholder exists) | [README](./modules/momentum.md) |
+| Momentum & Gamification | 5 | 🟡 ~5% (UI placeholder exists) | [README](./modules/momentum.md) |
 | Groups & Notes | 6 | ⬜ Not Started | [README](./modules/groups-notes.md) |
 | CRM & Governance | 6 | ⬜ Not Started | [README](./modules/crm-governance.md) |
 | Calendar & Ops Hub | 6 | ⬜ Not Started | [README](./modules/calendar-ops.md) |
@@ -240,3 +248,14 @@
 | Phase 6+ | Advanced Features | ⬜ 0% |
 
 **Total Estimated Completion: ~60% of core features (Phases 1-3 fully done)**
+
+---
+
+## Key Metrics
+
+- **Database Migrations:** 21
+- **Server Action Files:** 5 (pods, projects, tasks, chat, notifications)
+- **Component Directories:** 7 (chat, layout, notifications, projects, shared, tasks, ui)
+- **API Routes:** 3 (pods, members, invitations, test-email)
+- **Pages/Routes:** 20+ (auth, dashboard, pods, profile, messages)
+- **Lines of Code (Server Actions):** ~3,400+ (pods: 379, projects: 453, tasks: 588, chat: 1031, notifications: ~100)

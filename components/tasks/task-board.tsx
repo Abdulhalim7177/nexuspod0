@@ -61,7 +61,18 @@ interface Task {
       avatar_url: string | null
     }
   }[]
-  submissions?: any[]
+  submissions?: {
+    id: string
+    created_at: string
+    description: string
+  }[]
+}
+
+interface Member {
+  user_id: string
+  user: {
+    full_name: string | null
+  }
 }
 
 interface TaskBoardProps {
@@ -70,7 +81,7 @@ interface TaskBoardProps {
   initialTasks: Task[]
   canManage: boolean
   isProjectManager: boolean
-  members: any[]
+  members: Member[]
   currentUserId: string
 }
 
@@ -157,7 +168,7 @@ export function TaskBoard({ projectId, podId, initialTasks, canManage, isProject
     // Optimistic update
     const previousTasks = [...tasks]
     const updatedTasks = tasks.map(t => 
-      t.id === taskId ? { ...t, status: newStatus as any } : t
+      t.id === taskId ? { ...t, status: newStatus as Task['status'] } : t
     )
     setTasks(updatedTasks)
 

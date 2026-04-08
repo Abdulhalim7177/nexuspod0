@@ -12,9 +12,10 @@
 Nexus Pod solves the **isolation problem** faced by early-stage African startup founders. Unlike traditional project management tools (Jira, Trello), Nexus Pod combines:
 
 - **Pod-based Workspaces** — Isolated multi-tenant environments with role-based access
-- **Execution Engine** — Tasks with a Verification Loop (DONE → REVIEW → APPROVE/CORRECT)
-- **Opportunity Engine** — Cross-pod collaboration and hiring posts
-- **Momentum Scoring** — Gamified productivity tracking with streaks and leaderboards
+- **Execution Engine** — Tasks with a Verification Loop (TODO → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/CORRECT)
+- **Collaboration Suite** — Real-time chat (Pod, Project, DM), file uploads, voice notes, notifications
+- **Opportunity Engine** — Cross-pod collaboration and hiring posts (Coming Soon)
+- **Momentum Scoring** — Gamified productivity tracking with streaks and leaderboards (Coming Soon)
 
 ---
 
@@ -32,7 +33,7 @@ Nexus Pod solves the **isolation problem** faced by early-stage African startup 
 - ✅ Project CRUD with Public/Private visibility
 - ✅ Project member management (add, remove, role-based)
 - ✅ Project settings with visibility toggle
-- ✅ Task board (Kanban view) with drag-like interactions
+- ✅ Task board (Kanban view) with status columns
 - ✅ Task creation, editing, deletion
 - ✅ Multi-assignee support
 - ✅ Full task lifecycle: TODO → IN_PROGRESS → SUBMITTED → UNDER_REVIEW → APPROVED/DONE
@@ -42,21 +43,24 @@ Nexus Pod solves the **isolation problem** faced by early-stage African startup 
 - ✅ Task detail dialog/sheet with full metadata
 - ✅ "My Tasks" cross-pod dashboard
 - ✅ Activity feed with filter (All, Tasks, Members, Project)
+- ✅ Audit logs with History tab and filters
 
-### Phase 3: Collaboration — ⬜ Not Started
-- ⬜ Real-time chat (Supabase Realtime)
-- ⬜ File uploads (Supabase Storage)
-- ⬜ Notifications system
-- ⬜ Voice notes
-- ⬜ Typing indicators & online presence
+### Phase 3: Collaboration — ✅ Complete
+- ✅ Real-time chat (POD, PROJECT, TEAM, DM, GROUP types)
+- ✅ File uploads (Supabase Storage - 5 buckets)
+- ✅ Notifications system with realtime updates
+- ✅ Voice note recording
+- ✅ Typing indicators & online presence
+- ✅ 1-on-1 DMs
+- ✅ @mentions, read receipts, message pinning
 
-### Phase 4: Ecosystem — 🟡 Partial
-- 🟡 Audit logs (auto-logged for task/project actions, history feed with filters)
+### Phase 4: Ecosystem — 🟡 ~30% Complete
+- ✅ Audit logs (auto-logged for task/project actions, history feed with filters)
 - ⬜ Opportunities engine (cross-pod posts)
 - ⬜ Team management
 
-### Phase 5: Gamification — 🟡 Partial
-- 🟡 Momentum tab exists (placeholder UI)
+### Phase 5: Gamification — 🟡 ~5% Complete
+- 🟡 Momentum tab exists (placeholder UI in navigation)
 - ⬜ Momentum scoring algorithm
 - ⬜ Pod streaks
 - ⬜ Global leaderboard
@@ -93,6 +97,18 @@ Nexus Pod solves the **isolation problem** faced by early-stage African startup 
 - Real-time sub-task creation and toggle (instant UI feedback)
 - Submission → Review → Approve/Correct workflow
 
+### Real-Time Chat
+- Multiple conversation types: Pod, Project, Team, DM, Group
+- Supabase Realtime subscriptions for instant message delivery
+- File attachments and voice notes in messages
+- Typing indicators and online presence
+- Message pinning and @mentions
+
+### Notifications
+- Realtime notification bell with dropdown
+- Email notifications with branded HTML templates
+- Task assignment, submission, review, and comment alerts
+
 ---
 
 ## Quick Start
@@ -124,26 +140,33 @@ The app runs at [localhost:3000](http://localhost:3000).
 app/
 ├── (dashboard)/           # Authenticated routes
 │   ├── dashboard-client.tsx  # Sidebar + Topbar layout
-│   ├── pods/                 # Pod pages (list, create, detail, settings)
-│   └── profile/              # User profile
-├── api/                   # API routes
+│   ├── dashboard/            # Dashboard home
+│   ├── pods/                 # Pod pages (list, create, detail, settings, members, chat)
+│   ├── profile/              # User profile
+│   └── messages/             # Direct messaging
+├── api/                   # API routes (pods, email)
 ├── auth/                  # Auth pages (login, signup, confirm, etc.)
 components/
 ├── layout/                # AppSidebar, Topbar
 ├── projects/              # ProjectList, ProjectSettings, ProjectHistory, etc.
 ├── tasks/                 # TaskBoard, TaskDetailDialog, TaskDetailSheet
+├── chat/                  # ChatContainer, ChatInput, ChatMessages, etc.
+├── notifications/         # NotificationBell
+├── shared/                # FileUpload, VoiceRecorder
 ├── ui/                    # shadcn/ui primitives
 lib/
 ├── navigation.ts          # Unified sidebar navigation config
+├── pods/actions.ts        # Pod server actions
 ├── projects/actions.ts    # Project server actions
 ├── tasks/actions.ts       # Task server actions
-├── pods/actions.ts        # Pod server actions
+├── chat/actions.ts        # Chat server actions
+├── notifications/actions.ts # Notification server actions
+├── email.ts               # Email service with HTML templates
 ├── supabase/              # Client, server, middleware
 supabase/
-├── migrations/            # 20+ SQL migration files
+├── migrations/            # 21 SQL migration files
 docs/
 ├── TRACKER.md             # Development progress tracker
-├── modules/               # Per-module documentation
 ```
 
 ---
@@ -163,9 +186,20 @@ docs/
 | `task_submissions` | Evidence submissions |
 | `task_reviews` | Approve/correct actions |
 | `audit_logs` | Immutable action trail |
+| `conversations` | Chat rooms (POD, PROJECT, TEAM, DM, GROUP) |
+| `participants` | Conversation membership |
+| `messages` | Chat messages with realtime |
+| `notifications` | User notifications |
 
 ---
 
 ## Next Steps
 
 See [docs/TRACKER.md](./docs/TRACKER.md) for the full development roadmap.
+
+**Immediate Priorities:**
+1. Opportunities Engine (cross-pod collaboration posts)
+2. Team Management (teams, team leads, team task boards)
+3. Momentum Scoring Algorithm & Leaderboard
+4. Message-to-Task conversion
+5. Deadline reminder cron (pg_cron)

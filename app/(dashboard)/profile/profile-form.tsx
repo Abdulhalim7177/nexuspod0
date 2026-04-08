@@ -9,7 +9,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export function ProfileForm({ initialData, email }: { initialData: any, email: string }) {
+interface ProfileData {
+    full_name: string;
+    username: string | null;
+    bio: string | null;
+    skills: string[] | null;
+    interests: string[] | null;
+    avatar_url: string | null;
+}
+
+export function ProfileForm({ initialData, email }: { initialData: ProfileData, email: string }) {
     const [isPending, setIsPending] = useState(false)
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
 

@@ -11,7 +11,7 @@ const podSchema = z.object({
   summary: z.string().max(500, "Summary must be less than 500 characters.").optional().or(z.literal("")),
 })
 
-export async function createPod(prevState: any, formData: FormData): Promise<{ error?: string; success?: boolean }> {
+export async function createPod(prevState: { error?: string; success?: boolean } | null, formData: FormData): Promise<{ error?: string; success?: boolean }> {
   const supabase = await createClient()
 
   const { data: { user }, error: userError } = await supabase.auth.getUser()

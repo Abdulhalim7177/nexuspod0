@@ -36,7 +36,7 @@ function SubmitButton() {
 }
 
 export function CreatePodForm() {
-  const [state, formAction, isPending] = useActionState(createPod, initialState)
+  const [state, formAction] = useActionState(createPod, initialState)
   const router = useRouter()
 
   useEffect(() => {

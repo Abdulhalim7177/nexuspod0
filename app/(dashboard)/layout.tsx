@@ -1,6 +1,4 @@
 import { Suspense } from "react";
-import { Topbar } from "@/components/layout/topbar";
-import { AppSidebar } from "@/components/layout/app-sidebar";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileCompletionCheck } from "@/components/profile-completion-check";
 import { DashboardClient } from "./dashboard-client";

@@ -28,10 +28,31 @@ import {
 import { addProjectMember, removeProjectMember } from "@/lib/projects/actions"
 import { Badge } from "@/components/ui/badge"
 
+interface ProjectMember {
+  user: {
+    id: string
+    full_name: string
+    username: string
+    avatar_url: string
+  }
+}
+
+interface PodMember {
+  user_id: string
+  user: {
+    full_name: string
+    username: string
+  }
+}
+
 interface ProjectMemberManagerProps {
-  project: any
+  project: {
+    id: string
+    created_by: string
+    members?: ProjectMember[]
+  }
   podId: string
-  podMembers: any[]
+  podMembers: PodMember[]
   isAdmin: boolean
   currentUserId: string
 }
@@ -69,7 +90,7 @@ export function ProjectMemberManager({ project, podId, podMembers, isAdmin, curr
                 </SelectTrigger>
                 <SelectContent>
                   {podMembers
-                    .filter(pm => !project.members?.some((m: any) => m.user.id === pm.user_id))
+                    .filter(pm => !project.members?.some((m: ProjectMember) => m.user.id === pm.user_id))
                     .map(pm => (
                       <SelectItem key={pm.user_id} value={pm.user_id}>
                         {pm.user.full_name} (@{pm.user.username})
@@ -86,7 +107,7 @@ export function ProjectMemberManager({ project, podId, podMembers, isAdmin, curr
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {project.members?.map((member: any) => {
+        {project.members?.map((member: ProjectMember) => {
           const isMe = member.user.id === currentUserId
           const isCreator = project.created_by === member.user.id
 

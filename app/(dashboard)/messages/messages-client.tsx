@@ -149,7 +149,7 @@ export function MessagesClient({
           schema: "public",
           table: "chat_messages",
         },
-        async (payload) => {
+        async () => {
           // Refresh to show updated last message
           await loadConversations()
         }

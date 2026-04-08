@@ -39,8 +39,32 @@ interface SubTask {
   completed: boolean
 }
 
+interface Task {
+  id: string
+  title: string
+  description: string | null
+  status: string
+  priority: string
+  created_at: string
+  due_date: string | null
+  sub_tasks?: SubTask[]
+  attachments?: string[]
+  assignees?: {
+    user: {
+      id: string
+      full_name: string
+      avatar_url: string | null
+    }
+  }[]
+  submissions?: {
+    id: string
+    created_at: string
+    description: string
+  }[]
+}
+
 interface TaskDetailSheetProps {
-  task: any
+  task: Task
   isOpen: boolean
   onClose: () => void
   currentUserId: string
@@ -68,7 +92,7 @@ export function TaskDetailSheet({
     setSubTasks((task.sub_tasks as SubTask[]) || [])
   }, [task.id, task.sub_tasks])
 
-  const isAssignee = task.assignees?.some((a: any) => a.user.id === currentUserId)
+  const isAssignee = task.assignees?.some((a: { user: { id: string } }) => a.user.id === currentUserId)
   const latestSubmission = task.submissions?.[0]
   const attachments = (task.attachments as string[]) || []
 
@@ -82,6 +106,7 @@ export function TaskDetailSheet({
   }
 
   const handleReview = async (action: 'APPROVED' | 'CORRECTED') => {
+    if (!latestSubmission) return
     setIsSubmitting(true)
     const result = await reviewTask(task.id, latestSubmission.id, action, submissionNote, podId, projectId)
     if (result.success) {
@@ -113,7 +138,7 @@ export function TaskDetailSheet({
     await updateTaskDetails(task.id, { sub_tasks: updatedSubTasks }, podId, projectId)
   }
 
-  const PRIORITY_COLORS: any = {
+  const PRIORITY_COLORS: Record<string, string> = {
     LOW: "bg-slate-500/10 text-slate-600",
     MEDIUM: "bg-blue-500/10 text-blue-600",
     HIGH: "bg-orange-500/10 text-orange-600",
@@ -146,7 +171,7 @@ export function TaskDetailSheet({
                 <User className="h-3 w-3" /> Assignees
               </span>
               <div className="flex -space-x-2">
-                {task.assignees?.map((a: any) => (
+                {task.assignees?.map((a: { user: { id: string, avatar_url: string | null, full_name: string } }) => (
                   <Avatar key={a.user.id} className="h-7 w-7 border-2 border-background">
                     <AvatarImage src={a.user.avatar_url} />
                     <AvatarFallback className="text-[8px] font-bold">
@@ -254,7 +279,7 @@ export function TaskDetailSheet({
                       <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest">Latest Submission</span>
                       <span className="text-[10px] text-muted-foreground">{new Date(latestSubmission.created_at).toLocaleString()}</span>
                     </div>
-                    <p className="text-sm italic text-muted-foreground">"{latestSubmission.description}"</p>
+                    <p className="text-sm italic text-muted-foreground">&quot;{latestSubmission.description}&quot;</p>
                   </div>
                 ) : (
                   <div className="text-center py-10 border border-dashed rounded-xl opacity-50">

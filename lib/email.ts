@@ -162,7 +162,7 @@ const emailTemplate = (title: string, message: string, actionText: string | null
 export async function sendNotificationEmail({
   to,
   userName,
-  type,
+  type: _type,
   title,
   message,
   actionUrl,
