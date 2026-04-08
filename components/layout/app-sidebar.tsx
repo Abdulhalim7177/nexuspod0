@@ -373,7 +373,7 @@ export function AppSidebar({
                             className={`w-full justify-start h-auto p-2 rounded-xl hover:bg-accent/50 ${collapsed ? 'justify-center' : ''}`}
                         >
                             <Avatar className={`rounded-lg border-2 border-primary/20 ${collapsed ? 'h-8 w-8' : 'h-9 w-9'}`}>
-                                <AvatarImage src={user?.avatar_url} alt={displayName} />
+                                <AvatarImage src={user?.avatar_url || undefined} alt={displayName} />
                                 <AvatarFallback className="rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 text-primary text-sm font-bold">
                                     {initials}
                                 </AvatarFallback>
