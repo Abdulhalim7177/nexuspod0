@@ -224,7 +224,7 @@ export function ProjectSettings({ project, podId, podMembers }: ProjectSettingsP
               <div key={member.user.id} className="flex items-center justify-between p-3 rounded-xl border border-primary/5 bg-background/50 hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-9 w-9 border-2 border-primary/10 shadow-sm">
-                    <AvatarImage src={member.user.avatar_url} />
+                    <AvatarImage src={member.user.avatar_url || undefined} />
                     <AvatarFallback className="font-black text-xs">
                       {member.user.full_name.substring(0, 2).toUpperCase()}
                     </AvatarFallback>

@@ -210,9 +210,7 @@ async function PodContent({ params }: { params: Promise<{ podId: string }> }) {
                   {membersWithProfiles.slice(0, 5).map((member: { id: string, role: string, user: { avatar_url?: string, full_name?: string } }) => (
                     <div key={member.id} className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border shadow-sm">
-                        {member.user?.avatar_url && (
-                          <AvatarImage src={member.user.avatar_url} alt={member.user.full_name || 'User'} />
-                        )}
+                        <AvatarImage src={member.user.avatar_url || undefined} alt={member.user.full_name || 'User'} />
                         <AvatarFallback className="text-[10px] bg-primary/5 font-bold">
                           {member.user?.full_name?.substring(0, 2).toUpperCase() || '??'}
                         </AvatarFallback>

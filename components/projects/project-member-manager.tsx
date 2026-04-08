@@ -117,9 +117,9 @@ export function ProjectMemberManager({ project, podId, podMembers, isAdmin, curr
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <Avatar className="h-12 w-12 border-2 border-primary/10 shadow-sm">
-                        <AvatarImage src={member.user.avatar_url} />
-                        <AvatarFallback className="font-black text-sm bg-primary/5">
+                      <Avatar className="h-9 w-9 border-2 border-primary/10 shadow-sm">
+                        <AvatarImage src={member.user.avatar_url || undefined} />
+                        <AvatarFallback className="font-black text-xs">
                           {member.user.full_name.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
