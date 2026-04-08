@@ -171,16 +171,15 @@ export function TaskDetailSheet({
                 <User className="h-3 w-3" /> Assignees
               </span>
               <div className="flex -space-x-2">
-                {task.assignees?.map((a: { user: { id: string, avatar_url: string | null, full_name: string } }) => (
+                {task.assignees && task.assignees.length > 0 ? task.assignees.map((a: { user: { id: string, avatar_url: string | null, full_name: string } }) => ( 
                   <Avatar key={a.user.id} className="h-7 w-7 border-2 border-background">
-                    <AvatarImage src={a.user.avatar_url} />
+                    <AvatarImage src={a.user.avatar_url || undefined} />
                     <AvatarFallback className="text-[8px] font-bold">
                       {a.user.full_name.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                )) || <span className="text-xs text-muted-foreground italic">Unassigned</span>}
-              </div>
-            </div>
+                )) : <span className="text-xs text-muted-foreground italic">Unassigned</span>}
+              </div>            </div>
             <div className="space-y-1.5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                 <Calendar className="h-3 w-3" /> Due Date

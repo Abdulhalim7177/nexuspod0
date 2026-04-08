@@ -207,7 +207,7 @@ async function PodContent({ params }: { params: Promise<{ podId: string }> }) {
             <CardContent>
               {membersWithProfiles && membersWithProfiles.length > 0 ? (
                 <div className="space-y-4">
-                  {membersWithProfiles.slice(0, 5).map((member: { id: string, user: { avatar_url?: string, full_name?: string } }) => (
+                  {membersWithProfiles.slice(0, 5).map((member: { id: string, role: string, user: { avatar_url?: string, full_name?: string } }) => (
                     <div key={member.id} className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border shadow-sm">
                         {member.user?.avatar_url && (

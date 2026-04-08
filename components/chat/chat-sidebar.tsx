@@ -21,6 +21,7 @@ interface ChatSidebarProps {
   activeConversationId?: string
   onSelectConversation: (conversation: Conversation) => void
   onCreateConversation?: () => void
+  getTypingUsers?: (convoId: string) => string[]
   className?: string
 }
 
@@ -29,6 +30,7 @@ export function ChatSidebar({
   activeConversationId,
   onSelectConversation,
   onCreateConversation,
+  getTypingUsers,
   className,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
@@ -100,6 +102,7 @@ export function ChatSidebar({
                 conversations={podChats}
                 activeId={activeConversationId}
                 onSelect={onSelectConversation}
+                getTypingUsers={getTypingUsers}
               />
             )}
             {projectChats.length > 0 && (
@@ -108,6 +111,7 @@ export function ChatSidebar({
                 conversations={projectChats}
                 activeId={activeConversationId}
                 onSelect={onSelectConversation}
+                getTypingUsers={getTypingUsers}
               />
             )}
             {dmChats.length > 0 && (
@@ -116,6 +120,7 @@ export function ChatSidebar({
                 conversations={dmChats}
                 activeId={activeConversationId}
                 onSelect={onSelectConversation}
+                getTypingUsers={getTypingUsers}
               />
             )}
             {groupChats.length > 0 && (
@@ -124,6 +129,7 @@ export function ChatSidebar({
                 conversations={groupChats}
                 activeId={activeConversationId}
                 onSelect={onSelectConversation}
+                getTypingUsers={getTypingUsers}
               />
             )}
           </div>

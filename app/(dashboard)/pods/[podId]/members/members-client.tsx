@@ -37,7 +37,7 @@ interface Pod {
   id: string
   title: string
   npn: string
-  members?: Member[]
+  pod_members?: Member[]
 }
 
 interface PodMembersClientProps {

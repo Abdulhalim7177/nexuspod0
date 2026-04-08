@@ -108,6 +108,7 @@ export function TaskDetailDialog({
   }
 
   const handleReview = async (action: 'APPROVED' | 'CORRECTED') => {
+    if (!latestSubmission) return
     setIsSubmitting(true)
     const result = await reviewTask(task.id, latestSubmission.id, action, submissionNote, podId, projectId)
     if (result.success) {
@@ -175,9 +176,9 @@ export function TaskDetailDialog({
                 <User className="h-3 w-3" /> Assignees
               </span>
               <div className="flex -space-x-2">
-                {task.assignees?.length > 0 ? task.assignees.map((a: any) => (
+                {task.assignees && task.assignees.length > 0 ? task.assignees.map((a: any) => (
                   <Avatar key={a.user.id} className="h-7 w-7 border-2 border-background">
-                    <AvatarImage src={a.user.avatar_url} />
+                    <AvatarImage src={a.user.avatar_url || undefined} />
                     <AvatarFallback className="text-[8px] font-bold">
                       {a.user.full_name.substring(0, 2).toUpperCase()}
                     </AvatarFallback>

@@ -118,7 +118,7 @@ export function AppSidebar({
                 });
 
                 if (podMemberships && podMemberships.length > 0) {
-                    const podsData = podMemberships.map((m: { pods: { id: string, title: string, npn: string } }) => m.pods).filter(Boolean);
+                    const podsData = podMemberships.map((m: any) => Array.isArray(m.pods) ? m.pods[0] : m.pods).filter(Boolean);
                     setPods(podsData);
                     
                     // Set selected pod based on current URL or first available

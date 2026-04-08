@@ -62,7 +62,7 @@ export function ProfileForm({ initialData, email }: { initialData: ProfileData, 
 
                     <div className="flex items-center gap-6">
                         <Avatar className="h-24 w-24 rounded-2xl border-2 border-border/50">
-                            <AvatarImage src={initialData.avatar_url} />
+                            <AvatarImage src={initialData.avatar_url || undefined} />
                             <AvatarFallback className="rounded-2xl text-2xl bg-primary/10 text-primary font-bold">{initials}</AvatarFallback>
                         </Avatar>
                         <div className="space-y-1">
