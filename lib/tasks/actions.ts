@@ -342,7 +342,7 @@ export async function reviewTask(taskId: string, submissionId: string, action: '
   return { success: true }
 }
 
-export async function updateTaskDetails(taskId: string, details: any, podId: string, projectId: string) {
+export async function updateTaskDetails(taskId: string, details: Record<string, unknown>, podId: string, projectId: string) {
   const supabase = await createClient()
   
   // Get current task info for comparison
@@ -553,7 +553,7 @@ export async function editTask(taskId: string, podId: string, projectId: string,
 export async function getProjectTasks(projectId: string) {
   const supabase = await createClient()
   
-  const { data: tasks, error } = await supabase
+  const { data: tasks } = await supabase
     .from("tasks")
     .select(`
       *,

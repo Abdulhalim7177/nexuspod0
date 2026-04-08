@@ -2,7 +2,7 @@ import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, ElementType } from "react";
 import { Sparkles, ShieldCheck, CheckSquare, Lightbulb, Flame, Users, History, ArrowRight } from "lucide-react";
 
 function HeroSection() {
@@ -47,7 +47,7 @@ function HeroSection() {
   );
 }
 
-function FeatureCard({ icon: Icon, title, description, delay }: { icon: any; title: string; description: string; delay: number }) {
+function FeatureCard({ icon: Icon, title, description, delay }: { icon: ElementType; title: string; description: string; delay: number }) {
   return (
     <div
       className="group glass-card rounded-2xl p-6 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1"

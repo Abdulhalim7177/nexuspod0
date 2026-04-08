@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ElementType } from "react"
 import Link from "next/link"
-import { ArrowLeft, Users, Copy, Check, Link as LinkIcon, Crown, Shield, User, Trash2, X } from "lucide-react"
+import { ArrowLeft, Users, Copy, Check, Link as LinkIcon, Crown, Shield, User, Trash2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -33,8 +33,15 @@ interface Invitation {
   expires_at: string | null
 }
 
+interface Pod {
+  id: string
+  title: string
+  npn: string
+  pod_members?: Member[]
+}
+
 interface PodMembersClientProps {
-  pod: any
+  pod: Pod
   currentUserId: string
   podId: string
   canInvite: boolean
@@ -45,7 +52,6 @@ interface PodMembersClientProps {
 export function PodMembersClient({ pod, currentUserId, podId, canInvite, isFounder, invitations }: PodMembersClientProps) {
   const [copied, setCopied] = useState(false)
   const [inviteLink, setInviteLink] = useState<string | null>(null)
-  const [removingId, setRemovingId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<{id: string; role: string} | null>(null)
@@ -311,7 +317,7 @@ export function PodMembersClient({ pod, currentUserId, podId, canInvite, isFound
 }
 
 function RoleBadge({ role }: { role: string }) {
-  const icons: Record<string, any> = {
+  const icons: Record<string, ElementType> = {
     FOUNDER: Crown,
     POD_MANAGER: Shield,
     TEAM_LEAD: User,

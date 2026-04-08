@@ -6,7 +6,11 @@ import { Boxes, Trash2, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 interface PodSettingsFormProps {
-  pod: any
+  pod: {
+    title: string
+    summary?: string | null
+    npn: string
+  }
   isFounder: boolean
   podId: string
 }

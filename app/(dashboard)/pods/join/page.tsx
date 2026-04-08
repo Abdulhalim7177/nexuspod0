@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect, notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Boxes, ArrowRight, CheckCircle, AlertCircle, FolderKanban } from "lucide-react"
 import { revalidatePath } from "next/cache"
@@ -8,6 +8,32 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 interface JoinPageProps {
   searchParams: Promise<{ code?: string }>
+}
+
+interface InvitationData {
+  id: string
+  code: string
+  expires_at: string | null
+  used_count: number
+  max_uses: number
+  project_id?: string
+  pod_id?: string
+  project?: {
+    id: string
+    title: string
+    pod: {
+      id: string
+      title: string
+      npn: string
+      avatar_url: string | null
+    }
+  }
+  pod?: {
+    id: string
+    title: string
+    npn: string
+    avatar_url: string | null
+  }
 }
 
 async function JoinPodContent({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
@@ -21,7 +47,7 @@ async function JoinPodContent({ searchParams }: { searchParams: Promise<{ code?:
   const { data: { user } } = await supabase.auth.getUser()
   const isProjectInvite = code.startsWith("PR-")
 
-  let invitation: any = null
+  let invitation: InvitationData | null = null
 
   if (isProjectInvite) {
     const { data } = await supabase
@@ -41,8 +67,8 @@ async function JoinPodContent({ searchParams }: { searchParams: Promise<{ code?:
       `)
       .eq("code", code.toUpperCase())
       .eq("is_active", true)
-      .single()
-    invitation = data
+      .maybeSingle()
+    invitation = data as InvitationData | null
   } else {
     const { data } = await supabase
       .from("pod_invitations")
@@ -57,8 +83,8 @@ async function JoinPodContent({ searchParams }: { searchParams: Promise<{ code?:
       `)
       .eq("code", code.toUpperCase())
       .eq("is_active", true)
-      .single()
-    invitation = data
+      .maybeSingle()
+    invitation = data as InvitationData | null
   }
 
   if (!invitation) {

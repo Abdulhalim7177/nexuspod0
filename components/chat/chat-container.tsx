@@ -220,7 +220,7 @@ export function ChatContainer({
           user_id: currentUserId,
           is_typing: isTyping,
         })
-      } catch (err) {
+      } catch {
         // Silently ignore typing errors
       }
     },

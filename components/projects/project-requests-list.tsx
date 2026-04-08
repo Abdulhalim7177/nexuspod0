@@ -6,8 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Check, X, Loader2 } from "lucide-react"
 import { manageJoinRequest } from "@/lib/projects/actions"
 
+interface ProjectRequest {
+  id: string
+  user: {
+    id: string
+    full_name: string
+    avatar_url: string | null
+    username: string
+  }
+}
+
 interface ProjectRequestsListProps {
-  requests: any[]
+  requests: ProjectRequest[]
   podId: string
   projectId: string
 }
@@ -34,7 +44,7 @@ export function ProjectRequestsList({ requests: initialRequests, podId, projectI
         <div key={request.id} className="flex items-center justify-between p-3 rounded-xl border border-orange-500/20 bg-orange-500/5 animate-in fade-in slide-in-from-right-2">
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8 border border-orange-500/20">
-              <AvatarImage src={request.user.avatar_url} />
+              <AvatarImage src={request.user.avatar_url || undefined} />
               <AvatarFallback className="text-[10px] font-bold bg-orange-500/10 text-orange-700">
                 {request.user.full_name.substring(0, 2).toUpperCase()}
               </AvatarFallback>

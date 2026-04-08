@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { UserCircle, AlertCircle, ArrowRight } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
 
 export function ProfileCompletionCheck({ completion }: { completion: number }) {
   const [isOpen, setIsOpen] = useState(false)

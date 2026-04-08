@@ -40,7 +40,13 @@ export async function updateProfile(formData: FormData) {
     const skillsArray = skills ? skills.split(",").map(s => s.trim()).filter(Boolean) : []
     const interestsArray = interests ? interests.split(",").map(s => s.trim()).filter(Boolean) : []
 
-    const updateData: any = {
+    const updateData: {
+        full_name: string;
+        bio: string | null;
+        skills: string[];
+        interests: string[];
+        username?: string;
+    } = {
         full_name,
         bio: bio || null,
         skills: skillsArray,

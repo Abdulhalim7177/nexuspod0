@@ -72,7 +72,7 @@ export function FileUpload({
           const filePath = `${bucket}/${fileName}`
 
           // Upload with progress simulation
-          const { data, error } = await supabase.storage
+          const { error } = await supabase.storage
             .from(bucket)
             .upload(filePath, file, {
               cacheControl: "3600",
@@ -157,11 +157,6 @@ export function FileUpload({
     },
     [multiple, handleUpload]
   )
-
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.startsWith("image/")) return <Image className="h-5 w-5" />
-    return <FileText className="h-5 w-5" />
-  }
 
   return (
     <div className={cn("space-y-2", className)}>

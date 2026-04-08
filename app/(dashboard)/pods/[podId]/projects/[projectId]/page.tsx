@@ -65,7 +65,7 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
   const podUserIds = rawPodMembers?.map(m => m.user_id) || []
   const { data: podProfiles } = podUserIds.length > 0
     ? await supabase.from("profiles").select("id, full_name, avatar_url, username").in("id", podUserIds)
-    : { data: [] as any[] }
+    : { data: [] as { id: string, full_name: string | null, avatar_url: string | null, username: string | null }[] }
 
   const podMembers = (rawPodMembers || []).map(m => ({
     user_id: m.user_id,
@@ -73,8 +73,8 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
     user: podProfiles?.find(p => p.id === m.user_id) || { id: m.user_id, full_name: "Unknown", avatar_url: null, username: "unknown" }
   }))
 
-  const myPodMember = podMembers?.find((m: any) => m.user_id === user.id)
-  const isProjectMember = project.members?.some((m: any) => m.user.id === user.id)
+  const myPodMember = podMembers?.find((m: { user_id: string }) => m.user_id === user.id)
+  const isProjectMember = project.members?.some((m: { user: { id: string } }) => m.user.id === user.id)
   
   // 2. Permission logic
   const isProjectCreator = project.created_by === user.id
@@ -458,10 +458,10 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
             <CardContent className="pt-0">
               <div className="space-y-4">
                 {project.members && project.members.length > 0 ? (
-                  project.members.map((m: any) => (
+                  project.members.map((m: { user: { id: string, full_name: string | null, avatar_url: string | null, username: string | null } }) => (
                     <div key={m.user.id} className="flex items-center gap-3">
                       <Avatar className="h-8 w-8 border-2 border-primary/10 shadow-sm">
-                        <AvatarImage src={m.user.avatar_url} />
+                        <AvatarImage src={m.user.avatar_url || undefined} />
                         <AvatarFallback className="text-[10px] font-bold bg-primary/5">
                           {m.user.full_name?.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
@@ -486,13 +486,13 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
             <CardContent className="pt-0">
               <div className="space-y-4">
                 {podMembers
-                  ?.filter((pm: any) => !project.members?.some((m: any) => m.user.id === pm.user_id))
+                  ?.filter((pm: { user_id: string }) => !project.members?.some((m: { user: { id: string } }) => m.user.id === pm.user_id))
                   .slice(0, 5)
-                  .map((m: any) => (
+                  .map((m: { user_id: string, user: { full_name: string, avatar_url: string | null }, role: string }) => (
                   <div key={m.user_id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={m.user.avatar_url} />
+                        <AvatarImage src={m.user.avatar_url || undefined} />
                         <AvatarFallback className="text-[8px]">{m.user.full_name.substring(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <span className="text-[10px] font-medium truncate max-w-[80px]">{m.user.full_name}</span>
@@ -500,7 +500,7 @@ async function ProjectContent({ podId, projectId }: { podId: string, projectId: 
                     <Badge variant="outline" className="text-[8px] h-4 px-1 opacity-50 uppercase">{m.role.replace('_', ' ')}</Badge>
                   </div>
                 ))}
-                {podMembers?.filter((pm: any) => !project.members?.some((m: any) => m.user.id === pm.user_id)).length === 0 && (
+                {podMembers?.filter((pm: { user_id: string }) => !project.members?.some((m: { user: { id: string } }) => m.user.id === pm.user_id)).length === 0 && (
                   <p className="text-[10px] text-center text-muted-foreground">Entire pod is in this project.</p>
                 )}
               </div>
